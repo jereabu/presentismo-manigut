@@ -65,15 +65,11 @@
     },
     "data": {
       "title": "Tus datos",
-<<<<<<< Updated upstream
-      "instruction": "Usá el email con el que estás registrado en Manigut",
-=======
       "instruction": "Ingresá tu nombre tal como figura en Manigut",
       "nombre": "Nombre",
       "nombrePlaceholder": "Tu nombre",
       "apellido": "Apellido",
       "apellidoPlaceholder": "Tu apellido",
->>>>>>> Stashed changes
       "email": "Email",
       "emailPlaceholder": "tu@email.com",
       "password": "Contraseña",
