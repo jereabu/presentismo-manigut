@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-type Estado = 'presente' | 'ausente' | 'tardanza' | null
+type Estado = 'presente' | 'presente_tarde' | 'ausente' | 'ausente_justificado' | 'viaje' | null
 
 interface AsistenciaItemProps {
   talmidId: string
@@ -70,51 +70,68 @@ export default function AsistenciaItem({
   const handleEstadoClick = (nuevoEstado: Estado) => {
     if (saving) return
 
-    // Si es ausente, pedir justificacion primero
-    if (nuevoEstado === 'ausente') {
-      setPendingEstado('ausente')
+    // Si es ausente_justificado, pedir justificacion primero
+    if (nuevoEstado === 'ausente_justificado') {
+      setPendingEstado('ausente_justificado')
       setShowJustificacion(true)
       return
     }
 
-    // Para presente y tardanza, guardar directamente (sin justificacion)
+    // Para el resto, guardar directamente
     guardarAsistencia(nuevoEstado, null)
     setShowJustificacion(false)
     setJustificacion('')
   }
 
-  const handleGuardarAusencia = () => {
-    if (!justificacion.trim()) {
-      return // No permitir guardar sin justificacion
-    }
-    guardarAsistencia('ausente', justificacion.trim())
+  const handleGuardarJustificacion = () => {
+    if (!justificacion.trim()) return
+    guardarAsistencia('ausente_justificado', justificacion.trim())
     setShowJustificacion(false)
     setPendingEstado(null)
   }
 
-  const handleCancelarAusencia = () => {
+  const handleCancelarJustificacion = () => {
     setShowJustificacion(false)
     setPendingEstado(null)
     setJustificacion(justificacionInicial || '')
   }
 
   const getButtonClass = (btnEstado: Estado) => {
-    const base = 'flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all active:scale-95'
+    const base = 'flex-1 py-2 px-2 rounded-lg font-medium text-xs transition-all active:scale-95'
     const selected = estado === btnEstado
     const pending = pendingEstado === btnEstado
-    // Mostrar ausente pre-seleccionado visualmente si hay ausencia programada pendiente
     const preseleccionado = btnEstado === 'ausente' && ausenciaPendiente
 
     if (btnEstado === 'presente') {
       return `${base} ${selected ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200'}`
     }
-    if (btnEstado === 'tardanza') {
+    if (btnEstado === 'presente_tarde') {
       return `${base} ${selected ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}`
     }
     if (btnEstado === 'ausente') {
-      return `${base} ${selected || pending || preseleccionado ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'}`
+      return `${base} ${selected || preseleccionado ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'}`
+    }
+    if (btnEstado === 'ausente_justificado') {
+      return `${base} ${selected || pending ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`
+    }
+    if (btnEstado === 'viaje') {
+      return `${base} ${selected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`
     }
     return base
+  }
+
+  const getEstadoBadge = () => {
+    if (!estado) return null
+    const map: Record<string, { bg: string; text: string; icon: string }> = {
+      presente: { bg: 'bg-green-100', text: 'text-green-700', icon: '✓' },
+      presente_tarde: { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: '⏰' },
+      ausente: { bg: 'bg-red-100', text: 'text-red-700', icon: '✗' },
+      ausente_justificado: { bg: 'bg-orange-100', text: 'text-orange-700', icon: '📋' },
+      viaje: { bg: 'bg-blue-100', text: 'text-blue-700', icon: '✈️' },
+    }
+    const s = map[estado]
+    if (!s) return null
+    return <span className={`text-xs px-2 py-1 rounded-full ${s.bg} ${s.text}`}>{s.icon}</span>
   }
 
   return (
@@ -133,65 +150,51 @@ export default function AsistenciaItem({
           <span className="font-semibold text-gray-800">{apellido}</span>
           <span className="text-gray-600">, {nombre}</span>
         </div>
-        {estado && (
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            estado === 'presente' ? 'bg-green-100 text-green-700' :
-            estado === 'tardanza' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-red-100 text-red-700'
-          }`}>
-            {estado === 'presente' ? '✓' : estado === 'tardanza' ? '⏰' : '✗'}
-          </span>
-        )}
+        {getEstadoBadge()}
       </div>
 
-      <div className="flex gap-2">
-        <button
-          onClick={() => handleEstadoClick('presente')}
-          disabled={saving}
-          className={getButtonClass('presente')}
-        >
+      <div className="flex gap-1">
+        <button onClick={() => handleEstadoClick('presente')} disabled={saving} className={getButtonClass('presente')}>
           {t('present')}
         </button>
-        <button
-          onClick={() => handleEstadoClick('tardanza')}
-          disabled={saving}
-          className={getButtonClass('tardanza')}
-        >
+        <button onClick={() => handleEstadoClick('presente_tarde')} disabled={saving} className={getButtonClass('presente_tarde')}>
           {t('late')}
         </button>
-        <button
-          onClick={() => handleEstadoClick('ausente')}
-          disabled={saving}
-          className={getButtonClass('ausente')}
-        >
+        <button onClick={() => handleEstadoClick('ausente')} disabled={saving} className={getButtonClass('ausente')}>
           {t('absent')}
+        </button>
+        <button onClick={() => handleEstadoClick('ausente_justificado')} disabled={saving} className={getButtonClass('ausente_justificado')}>
+          {t('absentJustified')}
+        </button>
+        <button onClick={() => handleEstadoClick('viaje')} disabled={saving} className={getButtonClass('viaje')}>
+          {t('travel')}
         </button>
       </div>
 
-      {/* Form de justificacion para ausentes */}
+      {/* Form de justificacion para ausente_justificado */}
       {showJustificacion && (
-        <div className="mt-3 space-y-2 bg-red-50 p-3 rounded-lg border border-red-200">
-          <label className="block text-sm font-medium text-red-800">
+        <div className="mt-3 space-y-2 bg-orange-50 p-3 rounded-lg border border-orange-200">
+          <label className="block text-sm font-medium text-orange-800">
             {t('justification.label')}
           </label>
           <textarea
             value={justificacion}
             onChange={(e) => setJustificacion(e.target.value)}
             placeholder={t('justification.placeholder')}
-            className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             rows={2}
             autoFocus
           />
           <div className="flex gap-2">
             <button
-              onClick={handleGuardarAusencia}
+              onClick={handleGuardarJustificacion}
               disabled={saving || !justificacion.trim()}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? t('justification.confirming') : t('justification.confirm')}
             </button>
             <button
-              onClick={handleCancelarAusencia}
+              onClick={handleCancelarJustificacion}
               disabled={saving}
               className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg"
             >
@@ -202,8 +205,8 @@ export default function AsistenciaItem({
       )}
 
       {/* Mostrar justificacion existente */}
-      {estado === 'ausente' && justificacion && !showJustificacion && (
-        <div className="mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+      {estado === 'ausente_justificado' && justificacion && !showJustificacion && (
+        <div className="mt-2 text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
           <span className="font-medium">{t('justification.reason')}</span> {justificacion}
         </div>
       )}

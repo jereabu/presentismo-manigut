@@ -9,7 +9,7 @@ interface Asistencia {
   talmidId: string
   nombre: string
   apellido: string
-  estado: 'presente' | 'ausente' | 'tardanza' | null
+  estado: 'presente' | 'presente_tarde' | 'ausente' | 'ausente_justificado' | 'viaje' | null
   justificacion: string | null
   tieneAusenciaProgramada: boolean
   ausenciaProgramadaJustificacion: string | null
@@ -84,8 +84,8 @@ export default function TomarAsistenciaPage({
     return asistencias.reduce(
       (acc, a) => {
         if (a.estado === 'presente') acc.presentes++
-        else if (a.estado === 'tardanza') acc.tardanzas++
-        else if (a.estado === 'ausente') acc.ausentes++
+        else if (a.estado === 'presente_tarde') acc.tardanzas++
+        else if (a.estado === 'ausente' || a.estado === 'ausente_justificado' || a.estado === 'viaje') acc.ausentes++
         else acc.sinMarcar++
         return acc
       },

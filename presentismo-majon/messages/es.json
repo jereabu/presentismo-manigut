@@ -111,12 +111,14 @@
   },
   "asistenciaItem": {
     "present": "Presente",
-    "late": "Tardanza",
+    "late": "P. Tarde",
     "absent": "Ausente",
+    "absentJustified": "A. Just.",
+    "travel": "Viaje",
     "justification": {
       "label": "Justificación de ausencia (requerida)",
       "placeholder": "Ej: Enfermo, viaje familiar, etc.",
-      "confirm": "Confirmar ausencia",
+      "confirm": "Confirmar",
       "confirming": "Guardando...",
       "cancel": "Cancelar",
       "reason": "Motivo:"

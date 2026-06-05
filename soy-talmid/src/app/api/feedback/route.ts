@@ -16,7 +16,7 @@ export async function GET() {
         asistencias: {
           some: {
             talmidId: session.talmidId,
-            estado: { in: ['presente', 'tardanza'] }
+            estado: { in: ['presente', 'presente_tarde'] }
           }
         },
         feedbacks: {
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       where: {
         talmidId: session.talmidId,
         claseId,
-        estado: { in: ['presente', 'tardanza'] }
+        estado: { in: ['presente', 'presente_tarde'] }
       }
     })
 

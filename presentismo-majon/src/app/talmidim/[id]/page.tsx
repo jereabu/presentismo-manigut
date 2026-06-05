@@ -796,8 +796,12 @@ export default function TalmidFichaPage({
                     className={`px-3 py-1 rounded-full text-sm font-medium ${
                       a.estado === 'presente'
                         ? 'bg-green-100 text-green-700'
-                        : a.estado === 'tardanza'
+                        : a.estado === 'presente_tarde'
                         ? 'bg-yellow-100 text-yellow-700'
+                        : a.estado === 'ausente_justificado'
+                        ? 'bg-orange-100 text-orange-700'
+                        : a.estado === 'viaje'
+                        ? 'bg-blue-100 text-blue-700'
                         : 'bg-red-100 text-red-700'
                     }`}
                   >

@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     const reportes = talmidim.map((talmid) => {
       const asistencias = talmid.asistencias
       const presentes = asistencias.filter((a) => a.estado === 'presente').length
-      const tardanzas = asistencias.filter((a) => a.estado === 'tardanza').length
-      const ausentes = asistencias.filter((a) => a.estado === 'ausente').length
+      const tardanzas = asistencias.filter((a) => a.estado === 'presente_tarde').length
+      const ausentes = asistencias.filter((a) => a.estado === 'ausente' || a.estado === 'ausente_justificado' || a.estado === 'viaje').length
       const total = presentes + tardanzas + ausentes
 
       const porcentajeAsistencia = total > 0

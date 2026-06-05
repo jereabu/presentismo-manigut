@@ -48,8 +48,8 @@ export async function GET(
     const stats = todasAsistencias.reduce(
       (acc, a) => {
         if (a.estado === 'presente') acc.presentes++
-        else if (a.estado === 'tardanza') acc.tardanzas++
-        else if (a.estado === 'ausente') acc.ausentes++
+        else if (a.estado === 'presente_tarde') acc.tardanzas++
+        else if (a.estado === 'ausente' || a.estado === 'ausente_justificado' || a.estado === 'viaje') acc.ausentes++
         return acc
       },
       { presentes: 0, tardanzas: 0, ausentes: 0 }
