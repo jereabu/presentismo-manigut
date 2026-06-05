@@ -11,6 +11,8 @@ interface Reporte {
   presentes: number
   tardanzas: number
   ausentes: number
+  justificados: number
+  viajes: number
   totalClasesTomadas: number
   porcentajeAsistencia: number
   historial?: {
@@ -75,14 +77,25 @@ export default function ReportesPage() {
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
-      case 'presente':
-        return 'bg-green-100 text-green-700'
-      case 'tardanza':
-        return 'bg-yellow-100 text-yellow-700'
-      case 'ausente':
-        return 'bg-red-100 text-red-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
+      case 'presente':             return 'bg-green-100 text-green-700'
+      case 'tarde':                return 'bg-amber-100 text-amber-700'
+      case 'presente_tarde':       return 'bg-yellow-100 text-yellow-700'
+      case 'ausente':              return 'bg-red-100 text-red-700'
+      case 'ausente_justificado':  return 'bg-red-100 text-red-700'
+      case 'viaje':                return 'bg-blue-100 text-blue-700'
+      default:                     return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const getEstadoLabel = (estado: string) => {
+    switch (estado) {
+      case 'presente':             return 'P'
+      case 'tarde':                return 'T'
+      case 'presente_tarde':       return 'PT'
+      case 'ausente':              return 'A'
+      case 'ausente_justificado':  return 'AJ'
+      case 'viaje':                return 'V'
+      default:                     return estado
     }
   }
 
@@ -159,8 +172,16 @@ export default function ReportesPage() {
                         <span className="font-semibold">{reporte.tardanzas}</span> {t('reportes.stats.late')}
                       </div>
                       <div className="text-red-600">
-                        <span className="font-semibold">{reporte.ausentes}</span> {t('reportes.stats.absent')}
+                        <span className="font-semibold">{reporte.ausentes + reporte.justificados}</span> {t('reportes.stats.absent')}
+                        {reporte.justificados > 0 && (
+                          <span className="text-xs ml-1 opacity-70">({reporte.justificados} just.)</span>
+                        )}
                       </div>
+                      {reporte.viajes > 0 && (
+                        <div className="text-sky-600">
+                          <span className="font-semibold">{reporte.viajes}</span> viaje{reporte.viajes !== 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-2 text-xs text-gray-500">
@@ -190,11 +211,9 @@ export default function ReportesPage() {
                                 </span>
                               </div>
                               <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(
-                                  item.estado
-                                )}`}
+                                className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(item.estado)}`}
                               >
-                                {item.estado}
+                                {getEstadoLabel(item.estado)}
                               </span>
                             </div>
                           ))}

@@ -59,7 +59,7 @@ export async function GET(
     )
 
     const totalClases = stats.presentes + stats.tardes + stats.tardanzas + stats.ausentes + stats.justificados + stats.viajes
-    const faltas = stats.ausentes * 1 + stats.justificados * 1 + stats.viajes * 1 + stats.tardanzas * 0.5 + stats.tardes * 0.25
+    const faltas = stats.ausentes * 1 + stats.justificados * 1 + stats.viajes * 1 + stats.tardes * 0.5 + stats.tardanzas * 0.25
     const porcentajeAsistencia = totalClases > 0
       ? Math.round(((totalClases - faltas) / totalClases) * 100)
       : 0

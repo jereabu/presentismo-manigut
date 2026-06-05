@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
       const total = presentes + tardes + tardanzas + ausentes + justificados + viajes
 
       // Fórmula excel: (total - faltas) / total
-      // A/AJ/V = 1 falta, PT = 0.5, T = 0.25
-      const faltas = ausentes * 1 + justificados * 1 + viajes * 1 + tardanzas * 0.5 + tardes * 0.25
+      // A/AJ/V = 1 falta, T (tarde) = 0.5, PT (presente_tarde) = 0.25
+      const faltas = ausentes * 1 + justificados * 1 + viajes * 1 + tardes * 0.5 + tardanzas * 0.25
       const porcentajeAsistencia = total > 0
         ? Math.round(((total - faltas) / total) * 100)
         : 0
