@@ -7,6 +7,8 @@ import { useTranslations } from '@/lib/i18n'
 export default function RegistroPage() {
   const [step, setStep] = useState<'codigo' | 'datos'>('codigo')
   const [codigoInvitacion, setCodigoInvitacion] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [apellido, setApellido] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -65,6 +67,8 @@ export default function RegistroPage() {
         body: JSON.stringify({
           action: 'register',
           code: codigoInvitacion,
+          nombre,
+          apellido,
           email,
           password
         })
@@ -77,7 +81,6 @@ export default function RegistroPage() {
         return
       }
 
-      // Redirigir al login con mensaje de éxito
       window.location.href = '/login?registered=true'
     } catch {
       setError(t('error.connection'))
@@ -123,21 +126,17 @@ export default function RegistroPage() {
             </p>
 
             <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={codigoInvitacion}
-                  onChange={(e) => setCodigoInvitacion(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-4 border border-gray-300 rounded-xl text-center text-2xl tracking-widest font-mono uppercase focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder={t('code.placeholder')}
-                  maxLength={20}
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                value={codigoInvitacion}
+                onChange={(e) => setCodigoInvitacion(e.target.value.toUpperCase())}
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl text-center text-2xl tracking-widest font-mono uppercase focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder={t('code.placeholder')}
+                maxLength={20}
+                required
+              />
 
-              {error && (
-                <p className="text-red-600 text-sm text-center">{error}</p>
-              )}
+              {error && <p className="text-red-600 text-sm text-center">{error}</p>}
 
               <button
                 type="submit"
@@ -158,6 +157,38 @@ export default function RegistroPage() {
             </p>
 
             <form onSubmit={handleRegister} className="space-y-4">
+              {/* Nombre y Apellido */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('data.nombre')}
+                  </label>
+                  <input
+                    id="nombre"
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder={t('data.nombrePlaceholder')}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="apellido" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('data.apellido')}
+                  </label>
+                  <input
+                    id="apellido"
+                    type="text"
+                    value={apellido}
+                    onChange={(e) => setApellido(e.target.value)}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder={t('data.apellidoPlaceholder')}
+                    required
+                  />
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('data.email')}
@@ -205,9 +236,7 @@ export default function RegistroPage() {
                 />
               </div>
 
-              {error && (
-                <p className="text-red-600 text-sm text-center">{error}</p>
-              )}
+              {error && <p className="text-red-600 text-sm text-center">{error}</p>}
 
               <button
                 type="submit"

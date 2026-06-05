@@ -5,7 +5,7 @@ import { hashPassword } from '@/lib/auth'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { action, code, email, password } = body
+    const { action, code, nombre, apellido, email, password } = body
 
     // Paso 1: Verificar código
     if (action === 'verify-code') {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     // Paso 2: Registrar usuario
     if (action === 'register') {
-      if (!code || !email || !password) {
+      if (!code || !nombre || !apellido || !email || !password) {
         return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
       }
 
@@ -51,39 +51,48 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Código agotado' }, { status: 400 })
       }
 
-      // Buscar talmid por email
-      const talmid = await prisma.talmid.findUnique({
-        where: { email: email.toLowerCase() }
+      // Buscar talmid por nombre y apellido (case-insensitive)
+      const candidatos = await prisma.talmid.findMany({
+        where: {
+          nombre: { equals: nombre.trim(), mode: 'insensitive' },
+          apellido: { equals: apellido.trim(), mode: 'insensitive' },
+          activo: true,
+        }
       })
 
-      if (!talmid) {
+      if (candidatos.length === 0) {
         return NextResponse.json(
-          { error: 'No encontramos un alumno con ese email. Contactá a tu mejanej.' },
+          { error: 'No encontramos un alumno con ese nombre y apellido. Verificá los datos o contactá a tu mejanej.' },
           { status: 404 }
         )
       }
 
+      if (candidatos.length > 1) {
+        return NextResponse.json(
+          { error: 'Hay más de un alumno con ese nombre. Contactá a tu mejanej para que te registre manualmente.' },
+          { status: 409 }
+        )
+      }
+
+      const talmid = candidatos[0]
+
       if (talmid.passwordHash) {
         return NextResponse.json(
-          { error: 'Este email ya tiene una cuenta registrada' },
+          { error: 'Este alumno ya tiene una cuenta registrada. Si olvidaste tu contraseña, contactá a tu mejanej.' },
           { status: 400 }
         )
       }
 
-      if (!talmid.activo) {
-        return NextResponse.json(
-          { error: 'Esta cuenta no está activa' },
-          { status: 400 }
-        )
-      }
-
-      // Hashear contraseña y actualizar talmid
+      // Hashear contraseña y actualizar talmid con el email ingresado
       const passwordHash = await hashPassword(password)
 
       await prisma.$transaction([
         prisma.talmid.update({
           where: { id: talmid.id },
-          data: { passwordHash }
+          data: {
+            passwordHash,
+            email: email.toLowerCase().trim(),
+          }
         }),
         prisma.inviteCode.update({
           where: { id: inviteCode.id },

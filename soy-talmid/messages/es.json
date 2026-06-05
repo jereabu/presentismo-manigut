@@ -65,7 +65,11 @@
     },
     "data": {
       "title": "Tus datos",
-      "instruction": "Usá el email con el que estás registrado en Manigut",
+      "instruction": "Ingresá tu nombre tal como figura en el Manigut",
+      "nombre": "Nombre",
+      "nombrePlaceholder": "Tu nombre",
+      "apellido": "Apellido",
+      "apellidoPlaceholder": "Tu apellido",
       "email": "Email",
       "emailPlaceholder": "tu@email.com",
       "password": "Contraseña",
