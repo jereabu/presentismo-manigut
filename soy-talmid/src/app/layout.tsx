@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { NextIntlClientProvider } from 'next-intl';
-import messages from '../../messages/es.json';
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -33,9 +31,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="bg-gray-50 min-h-screen">
-        <NextIntlClientProvider locale="es" messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+        {children}
         <ServiceWorkerRegistration />
       </body>
     </html>
