@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
         presentes,
         tardanzas,
         ausentes,
+        justificados,
+        viajes,
         totalClasesTomadas: total,
         porcentajeAsistencia,
         historial: talmidId === talmid.id
