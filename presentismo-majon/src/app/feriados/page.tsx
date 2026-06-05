@@ -18,7 +18,16 @@ export default function FeriadosPage() {
   const [newFeriado, setNewFeriado] = useState({ fecha: '', nombre: '', tipo: 'manual' })
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState<'todos' | 'argentino' | 'judio' | 'manual'>('todos')
+  const [selectedFeriado, setSelectedFeriado] = useState<Feriado | null>(null)
   const t = useTranslations()
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedFeriado(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   useEffect(() => {
     fetchFeriados()
@@ -245,7 +254,8 @@ export default function FeriadosPage() {
                   {feriadosMes.map((feriado) => (
                     <div
                       key={feriado.id}
-                      className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between"
+                      onClick={() => setSelectedFeriado(feriado)}
+                      className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition"
                     >
                       <div>
                         <div className="font-medium text-gray-800">{feriado.nombre}</div>
@@ -298,6 +308,32 @@ export default function FeriadosPage() {
           </div>
         )}
       </main>
+      {/* Modal */}
+      {selectedFeriado && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedFeriado(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <span className={`px-2 py-1 rounded text-xs font-medium ${getTipoColor(selectedFeriado.tipo)}`}>
+                {selectedFeriado.tipo}
+              </span>
+              <button
+                onClick={() => setSelectedFeriado(null)}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">{selectedFeriado.nombre}</h2>
+            <p className="text-gray-500 capitalize">{formatFecha(selectedFeriado.fecha)}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
