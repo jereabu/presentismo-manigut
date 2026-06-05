@@ -53,9 +53,22 @@ export default function HomePage() {
     const permission = await Notification.requestPermission()
     if (permission === 'granted') {
       setNotificationsEnabled(true)
-      // Suscribir al push
       try {
-        const res = await fetch('/api/push/subscribe', { method: 'POST' })
+        const registration = await navigator.serviceWorker.ready
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidKey) {
+          alert(t('home.notifications.enabled'))
+          return
+        }
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: vapidKey,
+        })
+        const res = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subscription),
+        })
         if (res.ok) {
           alert(t('home.notifications.enabled'))
         }
