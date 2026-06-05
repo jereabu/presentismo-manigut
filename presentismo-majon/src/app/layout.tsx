@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AniMejanej",
-  description: "Gestión educativa del Majon - אִם זֶה חֶלְקֵנוּ — חֶלְקֵנוּ זֶה זָהָב",
+  description: "Gestión educativa Manigut - אִם זֶה חֶלְקֵנוּ — חֶלְקֵנוּ זֶה זָהָב",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

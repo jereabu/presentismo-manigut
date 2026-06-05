@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 
-const SESSION_COOKIE = 'majon_session'
+const SESSION_COOKIE = 'manigut_session'
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000 // 7 dias
 
 // Interfaz para la sesión con datos de kitá

@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Verificar sesion
-  const session = request.cookies.get('majon_session')
+  const session = request.cookies.get('manigut_session')
 
   if (!session) {
     const loginUrl = new URL('/login', request.url)

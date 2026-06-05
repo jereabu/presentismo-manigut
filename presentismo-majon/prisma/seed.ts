@@ -201,7 +201,7 @@ async function main() {
   console.log('Created feriados 2025 and 2026')
 
   // Crear password hasheado por defecto (cambiar en producción)
-  const defaultPassword = await bcrypt.hash('majon2025', 10)
+  const defaultPassword = await bcrypt.hash('manigut2025', 10)
   await prisma.config.upsert({
     where: { clave: 'password_hash' },
     update: {},
@@ -210,7 +210,7 @@ async function main() {
       valor: defaultPassword,
     },
   })
-  console.log('Created default password config (password: majon2025)')
+  console.log('Created default password config (password: manigut2025)')
 
   console.log('Seeding completed!')
 }

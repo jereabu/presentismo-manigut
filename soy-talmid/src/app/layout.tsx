@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'AniTalmid',
-  description: 'App de feedback para estudiantes del Majon - אִם זֶה חֶלְקֵנוּ — חֶלְקֵנוּ זֶה זָהָב',
+  description: 'App de feedback para estudiantes Manigut - אִם זֶה חֶלְקֵנוּ — חֶלְקֵנוּ זֶה זָהָב',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
