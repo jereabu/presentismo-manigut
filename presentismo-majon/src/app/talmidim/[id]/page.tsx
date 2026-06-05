@@ -796,6 +796,8 @@ export default function TalmidFichaPage({
                     className={`px-3 py-1 rounded-full text-sm font-medium ${
                       a.estado === 'presente'
                         ? 'bg-green-100 text-green-700'
+                        : a.estado === 'tarde'
+                        ? 'bg-amber-100 text-amber-700'
                         : a.estado === 'presente_tarde'
                         ? 'bg-yellow-100 text-yellow-700'
                         : a.estado === 'ausente_justificado'

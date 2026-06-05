@@ -47,17 +47,21 @@ export async function GET(
 
     const stats = todasAsistencias.reduce(
       (acc, a) => {
-        if (a.estado === 'presente') acc.presentes++
-        else if (a.estado === 'presente_tarde') acc.tardanzas++
-        else if (a.estado === 'ausente' || a.estado === 'ausente_justificado' || a.estado === 'viaje') acc.ausentes++
+        if (a.estado === 'presente')             acc.presentes++
+        else if (a.estado === 'tarde')           acc.tardes++
+        else if (a.estado === 'presente_tarde')  acc.tardanzas++
+        else if (a.estado === 'ausente')         acc.ausentes++
+        else if (a.estado === 'ausente_justificado') acc.justificados++
+        else if (a.estado === 'viaje')           acc.viajes++
         return acc
       },
-      { presentes: 0, tardanzas: 0, ausentes: 0 }
+      { presentes: 0, tardes: 0, tardanzas: 0, ausentes: 0, justificados: 0, viajes: 0 }
     )
 
-    const totalClases = stats.presentes + stats.tardanzas + stats.ausentes
+    const totalClases = stats.presentes + stats.tardes + stats.tardanzas + stats.ausentes + stats.justificados + stats.viajes
+    const faltas = stats.ausentes * 1 + stats.justificados * 1 + stats.viajes * 1 + stats.tardanzas * 0.5 + stats.tardes * 0.25
     const porcentajeAsistencia = totalClases > 0
-      ? Math.round(((stats.presentes + stats.tardanzas) / totalClases) * 100)
+      ? Math.round(((totalClases - faltas) / totalClases) * 100)
       : 0
 
     return NextResponse.json({

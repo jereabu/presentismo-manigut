@@ -47,13 +47,19 @@ export async function GET(request: NextRequest) {
     // Calcular estadisticas por talmid
     const reportes = talmidim.map((talmid) => {
       const asistencias = talmid.asistencias
-      const presentes = asistencias.filter((a) => a.estado === 'presente').length
-      const tardanzas = asistencias.filter((a) => a.estado === 'presente_tarde').length
-      const ausentes = asistencias.filter((a) => a.estado === 'ausente' || a.estado === 'ausente_justificado' || a.estado === 'viaje').length
-      const total = presentes + tardanzas + ausentes
+      const presentes  = asistencias.filter((a) => a.estado === 'presente').length
+      const tardes     = asistencias.filter((a) => a.estado === 'tarde').length
+      const tardanzas  = asistencias.filter((a) => a.estado === 'presente_tarde').length
+      const ausentes   = asistencias.filter((a) => a.estado === 'ausente').length
+      const justificados = asistencias.filter((a) => a.estado === 'ausente_justificado').length
+      const viajes     = asistencias.filter((a) => a.estado === 'viaje').length
+      const total = presentes + tardes + tardanzas + ausentes + justificados + viajes
 
+      // Fórmula excel: (total - faltas) / total
+      // A/AJ/V = 1 falta, PT = 0.5, T = 0.25
+      const faltas = ausentes * 1 + justificados * 1 + viajes * 1 + tardanzas * 0.5 + tardes * 0.25
       const porcentajeAsistencia = total > 0
-        ? Math.round(((presentes + tardanzas) / total) * 100)
+        ? Math.round(((total - faltas) / total) * 100)
         : 0
 
       return {

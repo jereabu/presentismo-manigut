@@ -38,7 +38,7 @@ export async function GET(
       where: {
         talmidId: session.talmidId,
         claseId,
-        estado: { in: ['presente', 'presente_tarde'] }
+        estado: { in: ['presente', 'tarde', 'presente_tarde'] }
       }
     })
 

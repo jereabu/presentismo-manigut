@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['presente', 'presente_tarde', 'ausente', 'ausente_justificado', 'viaje'].includes(estado)) {
+    if (!['presente', 'tarde', 'presente_tarde', 'ausente', 'ausente_justificado', 'viaje'].includes(estado)) {
       return NextResponse.json(
         { error: 'Estado invalido' },
         { status: 400 }

@@ -111,6 +111,7 @@
   },
   "asistenciaItem": {
     "present": "Presente",
+    "lateMinor": "Tarde",
     "late": "P. Tarde",
     "absent": "Ausente",
     "absentJustified": "A. Just.",
