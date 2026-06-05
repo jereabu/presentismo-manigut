@@ -18,7 +18,6 @@ export default function FeriadosPage() {
   const [newFeriado, setNewFeriado] = useState({ fecha: '', nombre: '', tipo: 'manual' })
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState<'todos' | 'argentino' | 'judio' | 'manual'>('todos')
-  const [expandedMes, setExpandedMes] = useState<string | null>(null)
   const t = useTranslations()
 
   useEffect(() => {
@@ -236,64 +235,45 @@ export default function FeriadosPage() {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
           </div>
         ) : (
-          <div className="space-y-2">
-            {Object.entries(feriadosPorMes).map(([mes, feriadosMes]) => {
-              const isOpen = expandedMes === mes
-              return (
-                <div key={mes} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <button
-                    onClick={() => setExpandedMes(isOpen ? null : mes)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition"
-                  >
-                    <span className="font-semibold text-gray-700 capitalize">{formatMes(mes)}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{feriadosMes.length} feriado{feriadosMes.length !== 1 ? 's' : ''}</span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+          <div className="space-y-6">
+            {Object.entries(feriadosPorMes).map(([mes, feriadosMes]) => (
+              <div key={mes}>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2 capitalize">
+                  {formatMes(mes)}
+                </h3>
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  {feriadosMes.map((feriado) => (
+                    <div
+                      key={feriado.id}
+                      className="flex items-center justify-between px-4 py-2.5 border-b border-gray-50 last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-mono text-gray-400 w-11 shrink-0">
+                          {feriado.fecha.slice(8)}/{feriado.fecha.slice(5, 7)}
+                        </span>
+                        <span className="text-sm text-gray-800">{feriado.nombre}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTipoColor(feriado.tipo)}`}>
+                          {feriado.tipo}
+                        </span>
+                        {feriado.tipo === 'manual' && (
+                          <button
+                            onClick={() => handleDelete(feriado.id)}
+                            className="text-red-400 hover:text-red-600 p-1"
+                            title={t('common.delete')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </button>
-
-                  {isOpen && (
-                    <div className="border-t border-gray-100">
-                      {feriadosMes.map((feriado) => (
-                        <div
-                          key={feriado.id}
-                          className="flex items-center justify-between px-4 py-2.5 border-b border-gray-50 last:border-0"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-mono text-gray-400 w-11 shrink-0">
-                              {feriado.fecha.slice(8)}/{feriado.fecha.slice(5, 7)}
-                            </span>
-                            <span className="text-sm text-gray-800">{feriado.nombre}</span>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTipoColor(feriado.tipo)}`}>
-                              {feriado.tipo}
-                            </span>
-                            {feriado.tipo === 'manual' && (
-                              <button
-                                onClick={() => handleDelete(feriado.id)}
-                                className="text-red-400 hover:text-red-600 p-1"
-                                title={t('common.delete')}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              )
-            })}
+              </div>
+            ))}
 
             {filteredFeriados.length === 0 && (
               <div className="text-center text-gray-500 py-8">
