@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import messages from '../../messages/es.json';
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -22,21 +22,18 @@ export const viewport: Viewport = {
   themeColor: '#10b981',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-
   return (
-    <html lang={locale}>
+    <html lang="es">
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="bg-gray-50 min-h-screen">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale="es" messages={messages}>
           {children}
         </NextIntlClientProvider>
         <ServiceWorkerRegistration />
