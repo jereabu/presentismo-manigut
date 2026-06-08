@@ -14,7 +14,7 @@ interface ClasePendiente {
 export default function HomePage() {
   const [clasesPendientes, setClasesPendientes] = useState<ClasePendiente[]>([])
   const [loading, setLoading] = useState(true)
-  const [talmid, setTalmid] = useState<{ nombre: string; apellido: string } | null>(null)
+  const [talmid, setTalmid] = useState<{ nombre: string; apellido: string; fotoUrl?: string | null } | null>(null)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const t = useTranslations()
 
@@ -25,11 +25,20 @@ export default function HomePage() {
 
   async function fetchData() {
     try {
-      const res = await fetch('/api/feedback')
-      if (res.ok) {
-        const data = await res.json()
+      const [feedbackRes, perfilRes] = await Promise.all([
+        fetch('/api/feedback'),
+        fetch('/api/perfil'),
+      ])
+      if (feedbackRes.ok) {
+        const data = await feedbackRes.json()
         setClasesPendientes(data.clasesPendientes || [])
         setTalmid(data.talmid)
+      }
+      if (perfilRes.ok) {
+        const perfilData = await perfilRes.json()
+        if (perfilData.talmid) {
+          setTalmid(prev => prev ? { ...prev, fotoUrl: perfilData.talmid.fotoUrl } : perfilData.talmid)
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -96,11 +105,28 @@ export default function HomePage() {
       {/* Header */}
       <header className="bg-emerald-600 text-white p-4 shadow-lg">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">{t('app.name')}</h1>
-            {talmid && (
-              <p className="text-emerald-100 text-sm">{t('home.greeting', { name: talmid.nombre })}</p>
-            )}
+          <div className="flex items-center gap-3">
+            <Link href="/perfil">
+              {talmid?.fotoUrl ? (
+                <img
+                  src={talmid.fotoUrl}
+                  alt="Foto"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400 hover:border-white transition"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-emerald-500 border-2 border-emerald-400 hover:border-white transition flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">
+                    {talmid ? `${talmid.nombre[0]}${talmid.apellido[0]}` : '?'}
+                  </span>
+                </div>
+              )}
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold">{t('app.name')}</h1>
+              {talmid && (
+                <p className="text-emerald-100 text-sm">{t('home.greeting', { name: talmid.nombre })}</p>
+              )}
+            </div>
           </div>
           <button
             onClick={handleLogout}
@@ -177,13 +203,29 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Link al historial */}
-        <div className="mt-8 text-center">
+        {/* Accesos rápidos */}
+        <div className="mt-8 grid grid-cols-2 gap-3">
+          <Link
+            href="/cronograma"
+            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all flex items-center gap-3"
+          >
+            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-gray-700">Cronograma</span>
+          </Link>
           <Link
             href="/historial"
-            className="text-emerald-600 font-medium hover:text-emerald-700"
+            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all flex items-center gap-3"
           >
-            {t('home.historyLink')}
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-gray-700">Historial</span>
           </Link>
         </div>
       </main>
