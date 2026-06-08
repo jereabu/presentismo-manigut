@@ -74,7 +74,7 @@ function generarDiasCalendario(mes: string, clases: Clase[], feriados: Feriado[]
       dia: fecha.getDate(),
       esMes: false,
       esHoy: false,
-      esDiaClase: fecha.getDay() === 2 || fecha.getDay() === 5,
+      esDiaClase: fecha.getDay() === 3 || fecha.getDay() === 5,
     })
   }
 
@@ -83,7 +83,7 @@ function generarDiasCalendario(mes: string, clases: Clase[], feriados: Feriado[]
     const fecha = new Date(year, month - 1, dia)
     const fechaStr = `${year}-${String(month).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
     const dayOfWeek = fecha.getDay()
-    const esDiaClase = dayOfWeek === 2 || dayOfWeek === 5
+    const esDiaClase = dayOfWeek === 3 || dayOfWeek === 5
 
     const clase = clases.find((c) => c.fecha === fechaStr && c.tipo === 'clase')
     const eventos = clases.filter((c) => c.fecha === fechaStr && c.tipo === 'evento')
@@ -112,7 +112,7 @@ function generarDiasCalendario(mes: string, clases: Clase[], feriados: Feriado[]
         dia: i,
         esMes: false,
         esHoy: false,
-        esDiaClase: fecha.getDay() === 2 || fecha.getDay() === 5,
+        esDiaClase: fecha.getDay() === 3 || fecha.getDay() === 5,
       })
     }
   }
@@ -217,16 +217,16 @@ export default function CronogramaPage() {
       const [, , dayStr] = dia.fecha.split('-')
       const fecha = new Date(yearNum, monthNum - 1, parseInt(dayStr))
       const dow = fecha.getDay()
-      const isMartes = dow === 2
+      const isMiercoles = dow === 3
       const isViernes = dow === 5
-      const esDiaClaseNormal = isMartes || isViernes
+      const esDiaClaseNormal = isMiercoles || isViernes
 
       setFormData({
         tipo: esDiaClaseNormal ? 'clase' : 'evento',
         titulo: '',
         docenteIds: [],
-        horaInicio: isMartes ? '18:30' : isViernes ? '17:30' : '',
-        horaFin: isMartes ? '20:30' : isViernes ? '21:00' : '',
+        horaInicio: isMiercoles ? '18:00' : isViernes ? '18:00' : '',
+        horaFin: isMiercoles ? '21:00' : isViernes ? '19:15' : '',
         esCompartida: false,
         kitaIds: [],
       })
@@ -502,11 +502,11 @@ export default function CronogramaPage() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Dias de la semana */}
             <div className="grid grid-cols-7 bg-gray-50 border-b">
-              {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map((dia) => (
+              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab'].map((dia) => (
                 <div
                   key={dia}
                   className={`py-2 text-center text-sm font-medium ${
-                    dia === 'Mar' || dia === 'Vie' ? 'text-blue-600' : 'text-gray-500'
+                    dia === 'Mié' || dia === 'Vie' ? 'text-blue-600' : 'text-gray-500'
                   }`}
                 >
                   {dia}
@@ -659,7 +659,7 @@ export default function CronogramaPage() {
                   <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => setFormData(p => ({ ...p, tipo: 'clase', horaInicio: (() => { const [y,m] = mesActual.split('-').map(Number); const d = new Date(y,m-1,parseInt(selectedDia.fecha.split('-')[2])); return d.getDay()===2?'18:30':'17:30' })(), horaFin: (() => { const [y,m] = mesActual.split('-').map(Number); const d = new Date(y,m-1,parseInt(selectedDia.fecha.split('-')[2])); return d.getDay()===2?'20:30':'21:00' })() }))}
+                      onClick={() => setFormData(p => ({ ...p, tipo: 'clase', horaInicio: (() => { const [y,m] = mesActual.split('-').map(Number); const d = new Date(y,m-1,parseInt(selectedDia.fecha.split('-')[2])); return d.getDay()===3?'18:00':'18:00' })(), horaFin: (() => { const [y,m] = mesActual.split('-').map(Number); const d = new Date(y,m-1,parseInt(selectedDia.fecha.split('-')[2])); return d.getDay()===3?'21:00':'19:15' })() }))}
                       className={`flex-1 py-2 text-sm font-medium transition ${formData.tipo === 'clase' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
                       Clase
@@ -675,7 +675,7 @@ export default function CronogramaPage() {
                 ) : (
                   <div className="px-3 py-2 bg-amber-50 rounded-lg border border-amber-200">
                     <span className="text-sm text-amber-700 font-medium">Evento especial</span>
-                    <span className="text-xs text-amber-600 ml-2">(días que no son martes ni viernes)</span>
+                    <span className="text-xs text-amber-600 ml-2">(días que no son miércoles ni viernes)</span>
                   </div>
                 )
               )}
