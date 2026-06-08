@@ -12,12 +12,12 @@ export async function GET() {
       where: { id: session.talmidId },
       select: { kitaId: true },
     })
-    if (!talmid) return NextResponse.json({ error: 'Talmid no encontrado' }, { status: 404 })
+    if (!talmid || !talmid.kitaId) return NextResponse.json({ error: 'Talmid no encontrado' }, { status: 404 })
 
     // Clases de la kitá del talmid
     const clases = await prisma.clase.findMany({
       where: {
-        kitot: { some: { kitaId: talmid.kitaId } },
+        kitot: { some: { kitaId: talmid.kitaId as string } },
       },
       orderBy: { fecha: 'asc' },
       select: {
