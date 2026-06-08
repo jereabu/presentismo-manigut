@@ -481,11 +481,11 @@ export default function CronogramaPage() {
         <div className="flex flex-wrap gap-4 mb-4 text-sm">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-blue-500"></div>
-            <span className="text-gray-600">Clase planificada</span>
+            <span className="text-gray-600">Clase (miércoles)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-amber-500"></div>
-            <span className="text-gray-600">Evento especial</span>
+            <span className="text-gray-600">Talleres (viernes)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-purple-400"></div>
@@ -542,7 +542,7 @@ export default function CronogramaPage() {
                   {/* Indicador de clase */}
                   {dia.clase && !dia.clase.cancelada && (
                     <div className="absolute bottom-1 left-1 right-1">
-                      <div className="bg-blue-500 text-white text-xs rounded px-1 py-0.5 truncate">
+                      <div className={`text-white text-xs rounded px-1 py-0.5 truncate ${dia.clase.titulo === 'Talleres' ? 'bg-amber-500' : 'bg-blue-500'}`}>
                         {dia.clase.titulo ||
                          dia.clase.docentes?.map(d => d.apellido).join(', ') ||
                          'Clase'}
@@ -629,8 +629,10 @@ export default function CronogramaPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-semibold text-lg">
-                {selectedDia.clase
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                {selectedDia.clase?.titulo === 'Talleres'
+                  ? <>🎨 Talleres</>
+                  : selectedDia.clase
                   ? 'Editar clase'
                   : formData.tipo === 'evento'
                   ? 'Nuevo evento especial'
@@ -694,10 +696,19 @@ export default function CronogramaPage() {
                 />
               </div>
 
+              {/* Banner Talleres */}
+              {selectedDia.clase?.titulo === 'Talleres' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-700">
+                  🎨 <strong>Talleres</strong> — editá los 4 capacitadores abajo. Los cambios se guardan siempre.
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Docentes {formData.tipo === 'evento' && <span className="text-gray-400 font-normal">(opcional)</span>}
+                    {selectedDia.clase?.titulo === 'Talleres'
+                      ? 'Capacitadores (4 slots)'
+                      : <>Docentes {formData.tipo === 'evento' && <span className="text-gray-400 font-normal">(opcional)</span>}</>}
                   </label>
                   <button
                     type="button"
