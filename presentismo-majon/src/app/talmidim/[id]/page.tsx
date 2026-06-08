@@ -50,6 +50,22 @@ interface Estadisticas {
   porcentajeAsistencia: number
 }
 
+interface ClaseResumen {
+  id: string
+  fecha: string
+  diaSemana: string
+  horaInicio: string
+  horaFin: string
+  cancelada: boolean
+}
+
+interface Feriado {
+  id: string
+  fecha: string
+  nombre: string
+  tipo: string
+}
+
 interface TalmidData {
   talmid: Talmid
   notas: Nota[]
@@ -72,7 +88,9 @@ export default function TalmidFichaPage({
   const { id } = use(params)
   const [data, setData] = useState<TalmidData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'info' | 'notas' | 'asistencia' | 'vacaciones'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'notas' | 'asistencia' | 'cronograma' | 'vacaciones'>('info')
+  const [clasesCronograma, setClasesCronograma] = useState<ClaseResumen[]>([])
+  const [feriadosCronograma, setFeriadosCronograma] = useState<Feriado[]>([])
   const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState({
     nombre: '',
@@ -95,7 +113,34 @@ export default function TalmidFichaPage({
   useEffect(() => {
     fetchTalmid()
     fetchAusencias()
+    fetchCronograma()
   }, [id])
+
+  const fetchCronograma = async () => {
+    try {
+      // Obtener clases de todos los meses relevantes (abr–dic 2026)
+      const meses = ['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12']
+      const [feriadosRes, ...cronogramaResults] = await Promise.all([
+        fetch('/api/feriados'),
+        ...meses.map(m => fetch(`/api/cronograma?mes=${m}`)),
+      ])
+      const feriadosJson = await feriadosRes.json()
+      setFeriadosCronograma(feriadosJson.feriados || [])
+
+      const todasClases: ClaseResumen[] = []
+      for (const res of cronogramaResults) {
+        const json = await res.json()
+        for (const c of (json.clases || [])) {
+          if (c.tipo === 'clase') todasClases.push(c)
+        }
+      }
+      // Ordenar por fecha
+      todasClases.sort((a, b) => a.fecha.localeCompare(b.fecha))
+      setClasesCronograma(todasClases)
+    } catch (error) {
+      console.error('Error fetching cronograma:', error)
+    }
+  }
 
   const fetchTalmid = async () => {
     try {
@@ -471,11 +516,11 @@ export default function TalmidFichaPage({
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4">
           <div className="flex">
-            {(['info', 'notas', 'asistencia', 'vacaciones'] as const).map((tab) => (
+            {(['info', 'notas', 'asistencia', 'cronograma', 'vacaciones'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 text-sm font-medium border-b-2 transition ${
+                className={`flex-1 py-3 text-xs font-medium border-b-2 transition ${
                   activeTab === tab
                     ? 'border-indigo-600 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -484,7 +529,8 @@ export default function TalmidFichaPage({
                 {tab === 'info' && 'Datos'}
                 {tab === 'notas' && `Notas (${notas.length})`}
                 {tab === 'asistencia' && 'Historial'}
-                {tab === 'vacaciones' && `Vacaciones`}
+                {tab === 'cronograma' && 'Cronograma'}
+                {tab === 'vacaciones' && 'Vacaciones'}
               </button>
             ))}
           </div>
@@ -814,6 +860,107 @@ export default function TalmidFichaPage({
             )}
           </div>
         )}
+
+        {/* Cronograma Tab */}
+        {activeTab === 'cronograma' && (() => {
+          // Agrupar clases y feriados por mes
+          const asistenciaByClaseId = Object.fromEntries(
+            asistencias.map(a => [a.id, a])
+          )
+          // Buscar asistencia por fecha (ya que el id de clase no está en asistencias)
+          const asistenciaByFecha = Object.fromEntries(
+            asistencias.map(a => [a.fecha, a])
+          )
+
+          // Juntar clases y feriados en eventos por mes
+          type Evento =
+            | { tipo: 'clase'; fecha: string; clase: ClaseResumen; asistencia: Asistencia | undefined }
+            | { tipo: 'feriado'; fecha: string; feriado: Feriado }
+
+          const eventosPorMes: Record<string, Evento[]> = {}
+
+          for (const c of clasesCronograma) {
+            const mes = c.fecha.slice(0, 7)
+            if (!eventosPorMes[mes]) eventosPorMes[mes] = []
+            eventosPorMes[mes].push({ tipo: 'clase', fecha: c.fecha, clase: c, asistencia: asistenciaByFecha[c.fecha] })
+          }
+          for (const f of feriadosCronograma) {
+            const mes = f.fecha.slice(0, 7)
+            if (!eventosPorMes[mes]) eventosPorMes[mes] = []
+            eventosPorMes[mes].push({ tipo: 'feriado', fecha: f.fecha, feriado: f })
+          }
+          // Ordenar eventos dentro de cada mes
+          for (const mes of Object.keys(eventosPorMes)) {
+            eventosPorMes[mes].sort((a, b) => a.fecha.localeCompare(b.fecha))
+          }
+
+          const mesesOrdenados = Object.keys(eventosPorMes).sort()
+
+          const estadoLabel: Record<string, string> = {
+            presente: 'P', tarde: 'T', presente_tarde: 'PT',
+            ausente: 'A', ausente_justificado: 'AJ', viaje: 'V',
+          }
+          const estadoColor: Record<string, string> = {
+            presente: 'bg-green-100 text-green-700',
+            tarde: 'bg-amber-100 text-amber-700',
+            presente_tarde: 'bg-yellow-100 text-yellow-700',
+            ausente: 'bg-red-100 text-red-700',
+            ausente_justificado: 'bg-red-100 text-red-700',
+            viaje: 'bg-sky-100 text-sky-700',
+          }
+          const formatMesCronograma = (mes: string) => {
+            const [y, m] = mes.split('-').map(Number)
+            return new Date(y, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+          }
+
+          return (
+            <div className="space-y-6">
+              {mesesOrdenados.length === 0 && (
+                <div className="text-center text-gray-500 py-8">Cargando cronograma...</div>
+              )}
+              {mesesOrdenados.map(mes => (
+                <div key={mes}>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2 capitalize">
+                    {formatMesCronograma(mes)}
+                  </h3>
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                    {eventosPorMes[mes].map((ev, i) => {
+                      const dd = ev.fecha.slice(8)
+                      const mm = ev.fecha.slice(5, 7)
+                      if (ev.tipo === 'feriado') {
+                        return (
+                          <div key={`f-${i}`} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0 bg-purple-50">
+                            <span className="text-sm font-mono text-purple-400 w-11 shrink-0">{dd}/{mm}</span>
+                            <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+                            <span className="text-sm text-purple-700 flex-1">{ev.feriado.nombre}</span>
+                            <span className="text-xs text-purple-400">{ev.feriado.tipo}</span>
+                          </div>
+                        )
+                      }
+                      const { clase, asistencia } = ev
+                      return (
+                        <div key={`c-${i}`} className={`flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0 ${clase.cancelada ? 'opacity-40' : ''}`}>
+                          <span className="text-sm font-mono text-gray-400 w-11 shrink-0">{dd}/{mm}</span>
+                          <span className="text-sm text-gray-500 capitalize shrink-0">{clase.diaSemana}</span>
+                          <span className="text-xs text-gray-400 flex-1">{clase.horaInicio}–{clase.horaFin}</span>
+                          {clase.cancelada ? (
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Cancelada</span>
+                          ) : asistencia ? (
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor[asistencia.estado] || 'bg-gray-100 text-gray-600'}`}>
+                              {estadoLabel[asistencia.estado] || asistencia.estado}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-400">–</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Vacaciones Tab */}
         {activeTab === 'vacaciones' && (
