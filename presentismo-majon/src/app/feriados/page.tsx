@@ -18,7 +18,22 @@ export default function FeriadosPage() {
   const [newFeriado, setNewFeriado] = useState({ fecha: '', nombre: '', tipo: 'manual' })
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState<'todos' | 'argentino' | 'judio' | 'manual'>('todos')
+  const [seeding, setSeeding] = useState(false)
   const t = useTranslations()
+
+  const handleSeedFeriados = async () => {
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/feriados/seed', { method: 'POST' })
+      if (res.ok) {
+        await fetchFeriados()
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setSeeding(false)
+    }
+  }
 
   useEffect(() => {
     fetchFeriados()
@@ -154,6 +169,22 @@ export default function FeriadosPage() {
 
       {/* Main Content */}
       <main className="max-w-lg mx-auto px-4 py-6">
+        {/* Seed button — solo si no hay feriados cargados */}
+        {!loading && feriados.filter(f => f.tipo !== 'manual').length === 0 && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-blue-700">No hay feriados cargados para 2026.</p>
+            <button
+              onClick={handleSeedFeriados}
+              disabled={seeding}
+              className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 flex items-center gap-2"
+            >
+              {seeding ? (
+                <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Cargando...</>
+              ) : '📅 Cargar feriados 2026'}
+            </button>
+          </div>
+        )}
+
         {/* Add Form */}
         {showForm && (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl p-4 shadow-sm mb-4">
@@ -276,8 +307,24 @@ export default function FeriadosPage() {
             ))}
 
             {filteredFeriados.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                {t('feriados.empty')}
+              <div className="text-center text-gray-500 py-8 space-y-4">
+                <p>{t('feriados.empty')}</p>
+                {feriados.length === 0 && (
+                  <button
+                    onClick={handleSeedFeriados}
+                    disabled={seeding}
+                    className="mx-auto flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition disabled:opacity-50"
+                  >
+                    {seeding ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        Cargando...
+                      </>
+                    ) : (
+                      '📅 Cargar feriados 2026'
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>
