@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
 
     if (mes) {
       const [year, month] = mes.split('-').map(Number)
-      const startDate = new Date(year, month - 1, 1)
-      const endDate = new Date(year, month, 0, 23, 59, 59)
+      // Usar UTC explícito para evitar desfase timezone entre servidor (UTC) y datos locales
+      const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0))
+      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59))
       whereClause = {
         fecha: {
           gte: startDate,
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest) {
       }
     } else if (anio) {
       const year = parseInt(anio)
-      const startDate = new Date(year, 0, 1)
-      const endDate = new Date(year, 11, 31, 23, 59, 59)
+      const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0))
+      const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59))
       whereClause = {
         fecha: {
           gte: startDate,
@@ -129,13 +130,13 @@ export async function POST(request: NextRequest) {
 
     // Parsear fecha correctamente (formato YYYY-MM-DD)
     const [year, month, day] = fecha.split('-').map(Number)
-    const fechaDate = new Date(year, month - 1, day)
-    const dayOfWeek = fechaDate.getDay()
+    const fechaDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
+    const dayOfWeek = new Date(year, month - 1, day).getDay()
 
-    // Para clases regulares, validar que sea martes (2) o viernes (5)
-    if (tipo === 'clase' && dayOfWeek !== 2 && dayOfWeek !== 5) {
+    // Para clases regulares, validar que sea miércoles (3) o viernes (5)
+    if (tipo === 'clase' && dayOfWeek !== 3 && dayOfWeek !== 5) {
       return NextResponse.json(
-        { error: `Solo se pueden crear clases los martes o viernes (dia recibido: ${dayOfWeek}, fecha: ${fecha})` },
+        { error: `Solo se pueden crear clases los miércoles o viernes (dia recibido: ${dayOfWeek}, fecha: ${fecha})` },
         { status: 400 }
       )
     }
@@ -147,12 +148,12 @@ export async function POST(request: NextRequest) {
 
     // Calcular diaSemana según tipo
     const diaSemana = tipo === 'clase'
-      ? (dayOfWeek === 2 ? 'martes' : 'viernes')
+      ? (dayOfWeek === 3 ? 'miércoles' : 'viernes')
       : getDiaSemanaCompleto(fechaDate)
 
     // Horas default solo para clases regulares
-    const defaultHoraInicio = dayOfWeek === 2 ? '18:30' : '17:30'
-    const defaultHoraFin = dayOfWeek === 2 ? '20:30' : '21:00'
+    const defaultHoraInicio = dayOfWeek === 3 ? '18:00' : '18:00'
+    const defaultHoraFin = dayOfWeek === 3 ? '21:00' : '19:15'
 
     // Para eventos, horaInicio y horaFin son requeridos
     if (tipo === 'evento' && (!horaInicio || !horaFin)) {
@@ -171,8 +172,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const startOfDay = new Date(year, month - 1, day, 0, 0, 0)
-    const endOfDay = new Date(year, month - 1, day, 23, 59, 59)
+    const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0))
+    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59))
 
     // Para eventos: siempre crear nuevo (múltiples eventos por día permitidos)
     // Para clases: upsert (una clase por día por kitá)
