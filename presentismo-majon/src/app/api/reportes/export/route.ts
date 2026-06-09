@@ -7,10 +7,13 @@ export async function GET() {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-    // Obtener todas las clases de la kitá (no canceladas), ordenadas por fecha
+    // Solo clases pasadas no canceladas (hasta hoy inclusive)
+    const hoy = new Date()
+    hoy.setUTCHours(23, 59, 59, 999)
     const clases = await prisma.clase.findMany({
       where: {
         cancelada: false,
+        fecha: { lte: hoy },
         kitot: { some: { kitaId: session.kitaId } },
       },
       orderBy: { fecha: 'asc' },

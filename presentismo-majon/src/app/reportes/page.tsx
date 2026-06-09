@@ -256,7 +256,7 @@ export default function ReportesPage() {
             <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-700">{data.totalClases}</div>
-                <div className="text-gray-600">{t('reportes.stats.totalClasses')}</div>
+                <div className="text-gray-600">clases hasta hoy</div>
               </div>
             </div>
 

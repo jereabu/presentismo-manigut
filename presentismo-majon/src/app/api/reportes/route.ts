@@ -34,13 +34,14 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Obtener total de clases de la kitá que no fueron canceladas
+    // Clases pasadas no canceladas (hasta hoy inclusive) — son las que cuentan para el porcentaje
+    const hoy = new Date()
+    hoy.setUTCHours(23, 59, 59, 999)
     const totalClases = await prisma.clase.count({
       where: {
         cancelada: false,
-        kitot: {
-          some: { kitaId: session.kitaId }
-        }
+        fecha: { lte: hoy },
+        kitot: { some: { kitaId: session.kitaId } },
       },
     })
 
