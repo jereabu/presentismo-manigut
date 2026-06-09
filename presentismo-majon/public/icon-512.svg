@@ -1,4 +1,6 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="100" fill="#1d4ed8"/>
-  <text x="256" y="320" font-family="Arial, sans-serif" font-size="220" font-weight="bold" fill="white" text-anchor="middle">M</text>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="100" fill="#4f46e5"/>
+  <path d="M256 100C256 100 148 186 148 260C148 318.9 199.8 367 256 367C312.2 367 364 318.9 364 260C364 186 256 100 256 100Z" fill="white" fill-opacity="0.9"/>
+  <path d="M256 155L269.2 196H312.5L277.6 219.5L290.8 260.5L256 237L221.2 260.5L234.4 219.5L199.5 196H242.8L256 155Z" fill="#4f46e5"/>
+  <text x="256" y="435" text-anchor="middle" fill="white" font-family="system-ui" font-size="44" font-weight="bold">MEJANEJ</text>
 </svg>

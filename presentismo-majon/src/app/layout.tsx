@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "AniMejanej",
   description: "Gestión educativa Manigut - אִם זֶה חֶלְקֵנוּ — חֶלְקֵנוּ זֶה זָהָב",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.svg",
+    apple: "/icon-192.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -1,4 +1,6 @@
-<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
-  <rect width="192" height="192" rx="40" fill="#1d4ed8"/>
-  <text x="96" y="120" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="white" text-anchor="middle">M</text>
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="40" fill="#4f46e5"/>
+  <path d="M96 38C96 38 56 68 56 98C56 120.091 74.909 138 96 138C117.091 138 136 120.091 136 98C136 68 96 38 96 38Z" fill="white" fill-opacity="0.9"/>
+  <path d="M96 58L100.944 72.556H116.18L103.618 81.389L108.562 96L96 87.167L83.438 96L88.382 81.389L75.82 72.556H91.056L96 58Z" fill="#4f46e5"/>
+  <text x="96" y="163" text-anchor="middle" fill="white" font-family="system-ui" font-size="16" font-weight="bold">MEJANEJ</text>
 </svg>

@@ -5,6 +5,10 @@ export const metadata: Metadata = {
   title: 'AniTalmid',
   description: 'App de feedback para estudiantes Manigut - אִם זֶה חֶלְקֵנוּ — חֶלְקֵנוּ זֶה זָהָב',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon-192.svg',
+    apple: '/icon-192.svg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
