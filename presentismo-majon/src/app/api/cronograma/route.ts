@@ -253,7 +253,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const { id } = await request.json()
+    const { id, motivo } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
@@ -278,7 +278,7 @@ export async function DELETE(request: NextRequest) {
       // Si tiene asistencias, marcar como cancelada en lugar de eliminar
       await prisma.clase.update({
         where: { id },
-        data: { cancelada: true },
+        data: { cancelada: true, motivo: motivo || null },
       })
       return NextResponse.json({ success: true, cancelled: true })
     }

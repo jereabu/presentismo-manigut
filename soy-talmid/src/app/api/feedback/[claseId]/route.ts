@@ -49,22 +49,10 @@ export async function GET(
       )
     }
 
-    // Verificar si ya dio feedback
+    // Verificar si ya dio feedback (lo devolvemos para pre-cargar el form)
     const existingFeedback = await prisma.feedback.findUnique({
-      where: {
-        talmidId_claseId: {
-          talmidId: session.talmidId,
-          claseId
-        }
-      }
+      where: { talmidId_claseId: { talmidId: session.talmidId, claseId } }
     })
-
-    if (existingFeedback) {
-      return NextResponse.json(
-        { error: 'Ya diste feedback de esta clase', alreadySubmitted: true },
-        { status: 400 }
-      )
-    }
 
     return NextResponse.json({
       clase: {
@@ -72,13 +60,20 @@ export async function GET(
         fecha: clase.fecha.toISOString(),
         titulo: clase.titulo,
         diaSemana: clase.diaSemana,
-        docentes: clase.docentes.map(cd => ({
+        docentes: clase.docentes.map((cd: { docente: { id: string; nombre: string; apellido: string; tipo: string } }) => ({
           id: cd.docente.id,
           nombre: cd.docente.nombre,
           apellido: cd.docente.apellido,
           tipo: cd.docente.tipo
         }))
-      }
+      },
+      existingFeedback: existingFeedback ? {
+        claseRating: existingFeedback.claseRating,
+        claseComentario: existingFeedback.claseComentario,
+        docentesFeedback: existingFeedback.docentesFeedback
+          ? JSON.parse(existingFeedback.docentesFeedback)
+          : [],
+      } : null,
     })
   } catch (error) {
     console.error('Error fetching clase:', error)

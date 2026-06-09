@@ -23,7 +23,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      feedbacks: feedbacks.map(f => ({
+      feedbacks: feedbacks.map((f: { id: string; claseRating: number; claseComentario: string | null; createdAt: Date; clase: { fecha: Date; titulo: string | null } }) => ({
         id: f.id,
         claseRating: f.claseRating,
         claseComentario: f.claseComentario,

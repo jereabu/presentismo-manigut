@@ -151,6 +151,9 @@ export default function CronogramaPage() {
   }>>([])
   const [checkingConflictos, setCheckingConflictos] = useState(false)
   const [showConflictoWarning, setShowConflictoWarning] = useState(false)
+  const [showCancelarModal, setShowCancelarModal] = useState(false)
+  const [motivoCancelacion, setMotivoCancelacion] = useState('')
+  const [filtroKita, setFiltroKita] = useState<string>('todas')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -370,31 +373,30 @@ export default function CronogramaPage() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDeleteConfirm = async () => {
     if (!selectedDia?.clase) return
-    if (!confirm('Eliminar esta clase?')) return
 
     setSaving(true)
     try {
       const res = await fetch('/api/cronograma', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selectedDia.clase.id }),
+        body: JSON.stringify({ id: selectedDia.clase.id, motivo: motivoCancelacion.trim() || null }),
       })
 
       if (res.ok) {
         const data = await res.json()
         if (data.deleted) {
-          // Eliminar del estado local
           setClases(prev => prev.filter(c => c.id !== selectedDia.clase!.id))
         } else if (data.cancelled) {
-          // Marcar como cancelada en el estado local
           setClases(prev => prev.map(c =>
-            c.id === selectedDia.clase!.id ? { ...c, cancelada: true } : c
+            c.id === selectedDia.clase!.id ? { ...c, cancelada: true, motivo: motivoCancelacion.trim() || null } : c
           ))
         }
       }
 
+      setShowCancelarModal(false)
+      setMotivoCancelacion('')
       setShowModal(false)
     } catch (error) {
       console.error('Error:', error)
@@ -426,7 +428,10 @@ export default function CronogramaPage() {
     }
   }
 
-  const dias = generarDiasCalendario(mesActual, clases, feriados)
+  const clasesFiltradas = filtroKita === 'todas'
+    ? clases
+    : clases.filter(c => c.kitot?.some(k => k.id === filtroKita))
+  const dias = generarDiasCalendario(mesActual, clasesFiltradas, feriados)
 
   // Filtrar y separar docentes por tipo
   const filteredDocentes = docentes.filter(d => {
@@ -476,6 +481,28 @@ export default function CronogramaPage() {
             </button>
           </div>
         </div>
+
+        {/* Filtro de kitá (solo si hay más de una kitá) */}
+        {kitot.length > 1 && (
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+            <button
+              onClick={() => setFiltroKita('todas')}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition ${filtroKita === 'todas' ? 'bg-gray-700 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'}`}
+            >
+              Todas
+            </button>
+            {kitot.map(k => (
+              <button
+                key={k.id}
+                onClick={() => setFiltroKita(filtroKita === k.id ? 'todas' : k.id)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition ${filtroKita === k.id ? 'text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'}`}
+                style={filtroKita === k.id ? { backgroundColor: k.colorHex } : {}}
+              >
+                {k.nombreDisplay}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 mb-4 text-sm">
@@ -981,15 +1008,61 @@ export default function CronogramaPage() {
                 {selectedDia.clase && (
                   <button
                     type="button"
-                    onClick={handleDelete}
+                    onClick={() => setShowCancelarModal(true)}
                     disabled={saving}
                     className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition disabled:opacity-50"
                   >
-                    Eliminar
+                    {selectedDia.clase.tieneAsistencias ? 'Cancelar' : 'Eliminar'}
                   </button>
                 )}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de cancelación con motivo */}
+      {showCancelarModal && selectedDia?.clase && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              {selectedDia.clase.tieneAsistencias ? 'Cancelar clase' : 'Eliminar clase'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {selectedDia.clase.tieneAsistencias
+                ? 'La clase tiene asistencias registradas. Se marcará como cancelada y será visible para los talmidim.'
+                : 'Esta clase no tiene asistencias y será eliminada permanentemente.'}
+            </p>
+            {selectedDia.clase.tieneAsistencias && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Motivo de cancelación <span className="text-gray-400">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={motivoCancelacion}
+                  onChange={e => setMotivoCancelacion(e.target.value)}
+                  placeholder="Ej: Feriado, lluvia, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent outline-none"
+                  autoFocus
+                />
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowCancelarModal(false); setMotivoCancelacion('') }}
+                className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={saving}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
+              >
+                {saving ? 'Procesando...' : selectedDia.clase.tieneAsistencias ? 'Cancelar clase' : 'Eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -33,6 +33,7 @@ export default function ReportesPage() {
   const [loading, setLoading] = useState(true)
   const [selectedTalmid, setSelectedTalmid] = useState<string | null>(null)
   const [historial, setHistorial] = useState<Reporte['historial'] | null>(null)
+  const [exportando, setExportando] = useState(false)
   const t = useTranslations()
 
   useEffect(() => {
@@ -66,6 +67,61 @@ export default function ReportesPage() {
       setSelectedTalmid(talmidId)
     } catch (error) {
       console.error('Error:', error)
+    }
+  }
+
+  const handleExportCSV = async () => {
+    if (!data) return
+    setExportando(true)
+    try {
+      // Obtener feedback stats
+      const feedbackRes = await fetch('/api/feedback')
+      const feedbackData = feedbackRes.ok ? await feedbackRes.json() : { docentesRanking: [], stats: {} }
+
+      // Crear CSV con BOM para Excel
+      const rows: string[][] = []
+      rows.push(['Apellido', 'Nombre', 'Presentes', 'Tardanzas', 'Ausentes', 'Justificados', 'Viajes', '% Asistencia', 'Total Clases Sistema'])
+
+      for (const r of data.reportes) {
+        rows.push([
+          r.apellido,
+          r.nombre,
+          String(r.presentes),
+          String(r.tardanzas),
+          String(r.ausentes),
+          String(r.justificados),
+          String(r.viajes),
+          `${r.porcentajeAsistencia}%`,
+          String(data.totalClases),
+        ])
+      }
+
+      // Separador
+      rows.push([])
+      rows.push(['--- FEEDBACK ---'])
+      rows.push(['Total feedbacks recibidos', String(feedbackData.stats?.totalFeedbacks ?? 0)])
+      rows.push(['Promedio general clase', String(feedbackData.stats?.promedioClase ?? '-')])
+      rows.push([])
+
+      if (feedbackData.docentesRanking?.length > 0) {
+        rows.push(['Docente', 'Promedio Rating', 'Cantidad Feedbacks'])
+        for (const d of feedbackData.docentesRanking) {
+          rows.push([`${d.nombre} ${d.apellido}`, String(d.promedio), String(d.cantidadFeedbacks)])
+        }
+      }
+
+      const csv = '﻿' + rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `reporte-majon-${new Date().toISOString().slice(0,10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setExportando(false)
     }
   }
 
@@ -118,7 +174,14 @@ export default function ReportesPage() {
               {t('common.back')}
             </Link>
             <h1 className="text-xl font-bold">{t('reportes.title')}</h1>
-            <div className="w-16"></div>
+            <button
+              onClick={handleExportCSV}
+              disabled={exportando || !data}
+              className="text-blue-200 hover:text-white text-sm disabled:opacity-50 flex items-center gap-1"
+              title="Exportar CSV"
+            >
+              {exportando ? '...' : '⬇ CSV'}
+            </button>
           </div>
         </div>
       </header>

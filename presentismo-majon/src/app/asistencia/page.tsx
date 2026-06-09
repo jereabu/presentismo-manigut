@@ -21,6 +21,7 @@ interface ClasePlanificada {
   docentes: Docente[]
   tieneAsistencias: boolean
   cantidadAsistencias: number
+  cantidadFeedbacks: number
 }
 
 export default function AsistenciaPage() {
@@ -160,6 +161,9 @@ export default function AsistenciaPage() {
                   {clase.tipo === 'evento' && <span className="mr-1">★</span>}
                   {formatFecha(clase.fecha)}
                   {clase.tieneAsistencias && <span className="ml-1">✓</span>}
+                  {clase.tieneAsistencias && clase.cantidadFeedbacks === 0 && isPasada(clase.fecha) && (
+                    <span className="ml-1 text-amber-500" title="Sin feedback">💬</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -168,6 +172,7 @@ export default function AsistenciaPage() {
             {selectedClaseId && (
               <ClaseSeleccionada
                 clase={clases.find((c) => c.id === selectedClaseId)!}
+                isPasada={isPasada(selectedClaseId ? clases.find(c => c.id === selectedClaseId)?.fecha || '' : '')}
               />
             )}
           </>
@@ -177,7 +182,7 @@ export default function AsistenciaPage() {
   )
 }
 
-function ClaseSeleccionada({ clase }: { clase: ClasePlanificada }) {
+function ClaseSeleccionada({ clase, isPasada }: { clase: ClasePlanificada; isPasada: boolean }) {
   const t = useTranslations('asistencia')
 
   const formatFechaLarga = (fechaStr: string) => {
@@ -238,6 +243,17 @@ function ClaseSeleccionada({ clase }: { clase: ClasePlanificada }) {
           </div>
         )}
 
+        {isPasada && clase.tieneAsistencias && clase.cantidadFeedbacks === 0 && (
+          <div className="mb-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <span>💬</span>
+            <span>Ningún talmid dio feedback de esta clase</span>
+          </div>
+        )}
+        {isPasada && clase.cantidadFeedbacks > 0 && (
+          <div className="mb-3 text-sm text-gray-500 text-right">
+            {clase.cantidadFeedbacks} feedback{clase.cantidadFeedbacks !== 1 ? 's' : ''} recibido{clase.cantidadFeedbacks !== 1 ? 's' : ''}
+          </div>
+        )}
         <Link
           href={`/asistencia/${clase.id}`}
           className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg text-center transition"

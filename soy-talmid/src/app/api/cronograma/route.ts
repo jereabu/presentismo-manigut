@@ -37,7 +37,7 @@ export async function GET() {
       where: { talmidId: session.talmidId },
       select: { claseId: true, estado: true, justificacion: true },
     })
-    const asistenciaMap = Object.fromEntries(asistencias.map(a => [a.claseId, a]))
+    const asistenciaMap = Object.fromEntries(asistencias.map((a: { claseId: string; estado: string; justificacion: string | null }) => [a.claseId, a]))
 
     // Feriados
     const feriados = await prisma.feriado.findMany({
@@ -46,7 +46,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      clases: clases.map(c => ({
+      clases: clases.map((c: { id: string; fecha: Date; diaSemana: string; horaInicio: string; horaFin: string; titulo: string | null; cancelada: boolean; tipo: string }) => ({
         id: c.id,
         fecha: c.fecha.toISOString().split('T')[0],
         diaSemana: c.diaSemana,
@@ -57,7 +57,7 @@ export async function GET() {
         tipo: c.tipo,
         asistencia: asistenciaMap[c.id] ?? null,
       })),
-      feriados: feriados.map(f => ({
+      feriados: feriados.map((f: { id: string; fecha: Date; nombre: string; tipo: string }) => ({
         id: f.id,
         fecha: f.fecha.toISOString().split('T')[0],
         nombre: f.nombre,

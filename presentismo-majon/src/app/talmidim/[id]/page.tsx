@@ -118,24 +118,16 @@ export default function TalmidFichaPage({
 
   const fetchCronograma = async () => {
     try {
-      // Obtener clases de todos los meses relevantes (abr–dic 2026)
-      const meses = ['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12']
-      const [feriadosRes, ...cronogramaResults] = await Promise.all([
+      const [feriadosRes, cronogramaRes] = await Promise.all([
         fetch('/api/feriados'),
-        ...meses.map(m => fetch(`/api/cronograma?mes=${m}`)),
+        fetch('/api/cronograma?anio=2026'),
       ])
       const feriadosJson = await feriadosRes.json()
       setFeriadosCronograma(feriadosJson.feriados || [])
 
-      const todasClases: ClaseResumen[] = []
-      for (const res of cronogramaResults) {
-        const json = await res.json()
-        for (const c of (json.clases || [])) {
-          if (c.tipo === 'clase') todasClases.push(c)
-        }
-      }
-      // Ordenar por fecha
-      todasClases.sort((a, b) => a.fecha.localeCompare(b.fecha))
+      const cronogramaJson = await cronogramaRes.json()
+      const todasClases: ClaseResumen[] = (cronogramaJson.clases || [])
+        .sort((a: ClaseResumen, b: ClaseResumen) => a.fecha.localeCompare(b.fecha))
       setClasesCronograma(todasClases)
     } catch (error) {
       console.error('Error fetching cronograma:', error)

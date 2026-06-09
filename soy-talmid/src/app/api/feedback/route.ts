@@ -38,11 +38,11 @@ export async function GET() {
       orderBy: { fecha: 'desc' }
     })
 
-    const clasesPendientes = clasesConAsistencia.map(clase => ({
+    const clasesPendientes = clasesConAsistencia.map((clase: { id: string; fecha: Date; titulo: string | null; docentes: { docente: { nombre: string; apellido: string } }[] }) => ({
       id: clase.id,
       fecha: clase.fecha.toISOString(),
       titulo: clase.titulo,
-      docentes: clase.docentes.map(cd => ({
+      docentes: clase.docentes.map((cd: { docente: { nombre: string; apellido: string } }) => ({
         nombre: cd.docente.nombre,
         apellido: cd.docente.apellido
       }))
@@ -97,32 +97,16 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verificar que no haya dado feedback ya
-    const existingFeedback = await prisma.feedback.findUnique({
-      where: {
-        talmidId_claseId: {
-          talmidId: session.talmidId,
-          claseId
-        }
-      }
-    })
-
-    if (existingFeedback) {
-      return NextResponse.json(
-        { error: 'Ya diste feedback de esta clase' },
-        { status: 400 }
-      )
+    // Crear o actualizar feedback (upsert)
+    const feedbackData = {
+      claseRating,
+      claseComentario: claseComentario || null,
+      docentesFeedback: docentesFeedback ? JSON.stringify(docentesFeedback) : null
     }
-
-    // Crear feedback
-    const feedback = await prisma.feedback.create({
-      data: {
-        talmidId: session.talmidId,
-        claseId,
-        claseRating,
-        claseComentario: claseComentario || null,
-        docentesFeedback: docentesFeedback ? JSON.stringify(docentesFeedback) : null
-      }
+    const feedback = await prisma.feedback.upsert({
+      where: { talmidId_claseId: { talmidId: session.talmidId, claseId } },
+      update: feedbackData,
+      create: { talmidId: session.talmidId, claseId, ...feedbackData }
     })
 
     return NextResponse.json({

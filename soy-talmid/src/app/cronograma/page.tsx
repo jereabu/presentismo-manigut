@@ -191,9 +191,10 @@ export default function CronogramaPage() {
                     const esFutura = c.fecha > hoy
 
                     return (
-                      <div
+                      <Link
                         key={`c-${i}`}
-                        className={`flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0
+                        href={`/clase/${c.id}`}
+                        className={`flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition
                           ${c.cancelada ? 'opacity-40' : ''}
                           ${c.fecha === hoy ? 'bg-emerald-50' : ''}
                         `}
@@ -219,7 +220,7 @@ export default function CronogramaPage() {
                         ) : (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-500">Próxima</span>
                         )}
-                      </div>
+                      </Link>
                     )
                   })}
                 </div>

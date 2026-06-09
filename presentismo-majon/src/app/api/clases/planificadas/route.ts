@@ -25,7 +25,7 @@ export async function GET() {
           }
         },
         _count: {
-          select: { asistencias: true },
+          select: { asistencias: true, feedbacks: true },
         },
       },
       orderBy: { fecha: 'desc' },
@@ -48,6 +48,7 @@ export async function GET() {
         })),
         tieneAsistencias: c._count.asistencias > 0,
         cantidadAsistencias: c._count.asistencias,
+        cantidadFeedbacks: c._count.feedbacks,
       })),
     })
   } catch (error) {

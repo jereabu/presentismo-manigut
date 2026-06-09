@@ -34,6 +34,7 @@ export default function FeedbackPage() {
   const tCommon = useTranslations('common')
 
   const [clase, setClase] = useState<Clase | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -53,23 +54,30 @@ export default function FeedbackPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        if (data.alreadySubmitted) {
-          router.push('/?message=already_submitted')
-          return
-        }
         setError(data.error || t('error.send'))
         return
       }
 
       setClase(data.clase)
-      // Inicializar feedback de docentes
-      setDocentesFeedback(
-        data.clase.docentes.map((d: Docente) => ({
-          docenteId: d.id,
-          rating: 0,
-          comentario: ''
-        }))
-      )
+
+      if (data.existingFeedback) {
+        // Pre-cargar feedback existente para edición
+        setIsEditing(true)
+        setClaseRating(data.existingFeedback.claseRating)
+        setClaseComentario(data.existingFeedback.claseComentario || '')
+        setDocentesFeedback(
+          data.clase.docentes.map((d: Docente) => {
+            const existing = (data.existingFeedback.docentesFeedback || []).find(
+              (df: DocenteFeedback) => df.docenteId === d.id
+            )
+            return { docenteId: d.id, rating: existing?.rating || 0, comentario: existing?.comentario || '' }
+          })
+        )
+      } else {
+        setDocentesFeedback(
+          data.clase.docentes.map((d: Docente) => ({ docenteId: d.id, rating: 0, comentario: '' }))
+        )
+      }
     } catch {
       setError(t('error.connection'))
     } finally {
@@ -167,7 +175,7 @@ export default function FeedbackPage() {
             </svg>
           </Link>
           <div>
-            <h1 className="font-semibold">{t('title')}</h1>
+            <h1 className="font-semibold">{isEditing ? 'Editar feedback' : t('title')}</h1>
             <p className="text-emerald-100 text-sm">
               {new Date(clase.fecha).toLocaleDateString('es-AR', {
                 weekday: 'long',
@@ -251,7 +259,7 @@ export default function FeedbackPage() {
           disabled={submitting || claseRating === 0}
           className="w-full bg-emerald-600 text-white py-4 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
         >
-          {submitting ? t('submitting') : t('submit')}
+          {submitting ? t('submitting') : isEditing ? 'Actualizar feedback' : t('submit')}
         </button>
       </form>
     </div>
