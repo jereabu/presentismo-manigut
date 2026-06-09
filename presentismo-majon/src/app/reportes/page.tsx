@@ -71,55 +71,112 @@ export default function ReportesPage() {
   }
 
   const handleExportCSV = async () => {
-    if (!data) return
     setExportando(true)
     try {
-      // Obtener feedback stats
-      const feedbackRes = await fetch('/api/feedback')
-      const feedbackData = feedbackRes.ok ? await feedbackRes.json() : { docentesRanking: [], stats: {} }
+      const res = await fetch('/api/reportes/export')
+      if (!res.ok) throw new Error('Error al obtener datos')
+      const { clases, talmidim } = await res.json() as {
+        clases: { id: string; fecha: string; diaSemana: string; titulo: string | null }[]
+        talmidim: { id: string; nombre: string; apellido: string; asistencias: Record<string, string> }[]
+      }
 
-      // Crear CSV con BOM para Excel
+      const totalClases = clases.length
+
+      // Pesos de faltas (igual que el Excel original)
+      const FALTA: Record<string, number> = {
+        presente: 0, tarde: 0.5, presente_tarde: 0.25,
+        ausente: 1, ausente_justificado: 1, viaje: 1,
+      }
+      const LABEL: Record<string, string> = {
+        presente: 'P', tarde: 'T', presente_tarde: 'PT',
+        ausente: 'A', ausente_justificado: 'AJ', viaje: 'V',
+      }
+
+      // Formatear fecha a DD/MM
+      const fmtFecha = (iso: string) => {
+        const [, m, d] = iso.split('-')
+        return `${d.replace(/^0/, '')}/${m.replace(/^0/, '')}`
+      }
+      // Formatear número con coma decimal (estilo Excel argentino)
+      const fmtNum = (n: number) => String(n).replace('.', ',')
+
       const rows: string[][] = []
-      rows.push(['Apellido', 'Nombre', 'Presentes', 'Tardanzas', 'Ausentes', 'Justificados', 'Viajes', '% Asistencia', 'Total Clases Sistema'])
 
-      for (const r of data.reportes) {
+      // Fila 1 — encabezado
+      rows.push([
+        '', 'Apellido', 'Nombre', 'Porcentaje.', 'Falta Tot.', 'Falta Just.', 'Falta Viaje.',
+        ...clases.map(c => c.titulo === 'Talleres' ? `T ${fmtFecha(c.fecha)}` : fmtFecha(c.fecha)),
+        'P', 'A', 'AJ', 'T', 'TJ', 'PT', 'V',
+      ])
+
+      // Fila 2 — pesos (como en el original)
+      rows.push([
+        '', '', '', '', '', '', '',
+        ...clases.map(() => ''),
+        '0', '0.5', '0.5', '0.5', '0.5', '0.25', '0',
+      ])
+
+      // Filas de talmidim
+      talmidim.forEach((t, idx) => {
+        const estados = clases.map(c => t.asistencias[c.id] || '')
+        const label   = clases.map(c => LABEL[t.asistencias[c.id]] || '')
+
+        const faltaTotal = estados.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
+        const justCount  = estados.filter(e => e === 'ausente_justificado').length
+        const viajeCount = estados.filter(e => e === 'viaje').length
+
+        const pct = totalClases > 0
+          ? ((totalClases - faltaTotal) / totalClases * 100).toFixed(2).replace('.', ',') + '%'
+          : '0,00%'
+
+        const P  = estados.filter(e => e === 'presente').length
+        const A  = estados.filter(e => e === 'ausente').length
+        const AJ = justCount
+        const Tc = estados.filter(e => e === 'tarde').length
+        const PT = estados.filter(e => e === 'presente_tarde').length
+        const V  = viajeCount
+
         rows.push([
-          r.apellido,
-          r.nombre,
-          String(r.presentes),
-          String(r.tardanzas),
-          String(r.ausentes),
-          String(r.justificados),
-          String(r.viajes),
-          `${r.porcentajeAsistencia}%`,
-          String(data.totalClases),
+          String(idx + 1),
+          t.apellido,
+          t.nombre,
+          pct,
+          fmtNum(faltaTotal),
+          String(justCount),
+          String(viajeCount),
+          ...label,
+          String(P), String(A), String(AJ), String(Tc), '0', String(PT), String(V),
         ])
-      }
+      })
 
-      // Separador
-      rows.push([])
-      rows.push(['--- FEEDBACK ---'])
-      rows.push(['Total feedbacks recibidos', String(feedbackData.stats?.totalFeedbacks ?? 0)])
-      rows.push(['Promedio general clase', String(feedbackData.stats?.promedioClase ?? '-')])
+      // Fila en blanco
       rows.push([])
 
-      if (feedbackData.docentesRanking?.length > 0) {
-        rows.push(['Docente', 'Promedio Rating', 'Cantidad Feedbacks'])
-        for (const d of feedbackData.docentesRanking) {
-          rows.push([`${d.nombre} ${d.apellido}`, String(d.promedio), String(d.cantidadFeedbacks)])
-        }
-      }
+      // Fila de totales por clase (cantidad de presentes por fecha)
+      const totalesPorClase = clases.map(c => {
+        return String(talmidim.filter(t => ['presente', 'tarde', 'presente_tarde'].includes(t.asistencias[c.id])).length)
+      })
+      rows.push(['', '', '', '', '', '', '', ...totalesPorClase])
 
-      const csv = '﻿' + rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+      // Generar CSV con BOM para Excel
+      const csv = '﻿' + rows
+        .map(row => row.map(cell => {
+          const s = String(cell)
+          return s.includes(',') || s.includes('"') || s.includes('\n')
+            ? `"${s.replace(/"/g, '""')}"` : s
+        }).join(','))
+        .join('\n')
+
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `reporte-majon-${new Date().toISOString().slice(0,10)}.csv`
+      a.download = `presentismo-majon-${new Date().toISOString().slice(0,10)}.csv`
       a.click()
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error(e)
+      alert('Error al exportar. Intentá de nuevo.')
     } finally {
       setExportando(false)
     }
