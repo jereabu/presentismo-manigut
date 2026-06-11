@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { calcularFaltas, calcularPorcentajeAsistencia, getTotalClasesPasadas } from '@/lib/asistencia'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -35,15 +36,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Clases pasadas no canceladas (hasta hoy inclusive) — son las que cuentan para el porcentaje
-    const hoy = new Date()
-    hoy.setUTCHours(23, 59, 59, 999)
-    const totalClases = await prisma.clase.count({
-      where: {
-        cancelada: false,
-        fecha: { lte: hoy },
-        kitot: { some: { kitaId: session.kitaId } },
-      },
-    })
+    const totalClases = await getTotalClasesPasadas(session.kitaId)
 
     // Calcular estadisticas por talmid
     const reportes = talmidim.map((talmid) => {
@@ -58,12 +51,10 @@ export async function GET(request: NextRequest) {
 
       // Fórmula excel: (total - faltas) / total
       // A/AJ/V = 1 falta, T (tarde) = 0.5, PT (presente_tarde) = 0.25
-      const faltas = ausentes * 1 + justificados * 1 + viajes * 1 + tardes * 0.5 + tardanzas * 0.25
+      const faltas = calcularFaltas({ presentes, tardes, tardanzas, ausentes, justificados, viajes })
       // Usar totalClases (clases del sistema) como denominador para no inflar el % cuando faltan registros
       const denominador = totalClases > 0 ? totalClases : total
-      const porcentajeAsistencia = denominador > 0
-        ? Math.round(((denominador - faltas) / denominador) * 100)
-        : 0
+      const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, denominador)
 
       return {
         id: talmid.id,
