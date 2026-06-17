@@ -47,7 +47,8 @@ export async function GET() {
     let claseRatingCount = 0
 
     for (const feedback of feedbacks) {
-      // Sumar rating de clase
+      // Solo contar ratings reales (no los feedbacks vacíos sembrados)
+      if (feedback.claseRating === 0) continue
       totalClaseRating += feedback.claseRating
       claseRatingCount++
 
@@ -104,8 +105,57 @@ export async function GET() {
       .filter(d => d.cantidadFeedbacks > 0)
       .sort((a, b) => b.promedio - a.promedio)
 
+    // Agrupar feedbacks por clase/fecha (excluir feedbacks vacíos: rating=0 y sin comentario real)
+    const feedbacksReales = feedbacks.filter(
+      f => f.claseRating > 0 || (f.claseComentario && f.claseComentario.trim().length > 0)
+    )
+
+    const claseMap = new Map<string, {
+      claseId: string
+      fecha: string
+      titulo: string | null
+      talmidim: Array<{
+        id: string
+        nombre: string
+        apellido: string
+        claseRating: number
+        claseComentario: string | null
+        docentesFeedback: Array<{ docenteId: string; rating: number; comentario?: string }>
+      }>
+    }>()
+
+    for (const f of feedbacksReales) {
+      const key = f.clase.id
+      if (!claseMap.has(key)) {
+        claseMap.set(key, {
+          claseId: f.clase.id,
+          fecha: f.clase.fecha.toISOString().split('T')[0],
+          titulo: f.clase.titulo,
+          talmidim: [],
+        })
+      }
+      claseMap.get(key)!.talmidim.push({
+        id: f.talmid.id,
+        nombre: f.talmid.nombre,
+        apellido: f.talmid.apellido,
+        claseRating: f.claseRating,
+        claseComentario: f.claseComentario,
+        docentesFeedback: f.docentesFeedback ? JSON.parse(f.docentesFeedback) : [],
+      })
+    }
+
+    // Ordenar talmidim alfabéticamente dentro de cada clase
+    const porFecha = Array.from(claseMap.values())
+      .sort((a, b) => b.fecha.localeCompare(a.fecha))
+      .map(c => ({
+        ...c,
+        talmidim: c.talmidim.sort((a, b) =>
+          a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre)
+        ),
+      }))
+
     // Formatear feedbacks recientes
-    const feedbacksRecientes = feedbacks.slice(0, 20).map(f => ({
+    const feedbacksRecientes = feedbacksReales.slice(0, 20).map(f => ({
       id: f.id,
       claseRating: f.claseRating,
       claseComentario: f.claseComentario,
@@ -123,13 +173,14 @@ export async function GET() {
 
     return NextResponse.json({
       stats: {
-        totalFeedbacks: feedbacks.length,
+        totalFeedbacks: feedbacksReales.length,
         promedioClase: claseRatingCount > 0
           ? Math.round((totalClaseRating / claseRatingCount) * 10) / 10
           : 0
       },
       docentesRanking,
-      feedbacksRecientes
+      feedbacksRecientes,
+      porFecha,
     })
   } catch (error) {
     console.error('Error fetching feedback:', error)

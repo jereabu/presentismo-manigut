@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
       const total = presentes + tardes + tardanzas + ausentes + justificados + viajes
 
       const faltas = calcularFaltas({ presentes, tardes, tardanzas, ausentes, justificados, viajes })
-      const denominador = totalClases > 0 ? totalClases : total
-      const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, denominador)
+      // Denominador = registros propios del talmid (igual que la fórmula Excel MAX(0,...))
+      const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, total)
 
       return {
         id: talmid.id,

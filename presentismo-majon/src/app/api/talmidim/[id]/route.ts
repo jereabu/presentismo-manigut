@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
-import { calcularFaltas, calcularPorcentajeAsistencia, getTotalClasesPasadas } from '@/lib/asistencia'
+import { calcularFaltas, calcularPorcentajeAsistencia } from '@/lib/asistencia'
 
 export async function GET(
   request: NextRequest,
@@ -61,9 +61,7 @@ export async function GET(
 
     const totalClasesTomadas = stats.presentes + stats.tardes + stats.tardanzas + stats.ausentes + stats.justificados + stats.viajes
     const faltas = calcularFaltas(stats)
-    const totalClasesPasadas = await getTotalClasesPasadas(session.kitaId)
-    const totalClases = totalClasesPasadas > 0 ? totalClasesPasadas : totalClasesTomadas
-    const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, totalClases)
+    const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, totalClasesTomadas)
 
     return NextResponse.json({
       talmid: {
@@ -92,7 +90,7 @@ export async function GET(
       })),
       estadisticas: {
         ...stats,
-        totalClases,
+        totalClases: totalClasesTomadas,
         porcentajeAsistencia,
       },
     })

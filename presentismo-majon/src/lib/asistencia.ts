@@ -24,11 +24,12 @@ export function calcularFaltas(stats: AsistenciaStats): number {
 }
 
 /**
- * Calcula el porcentaje de asistencia: (denominador - faltas) / denominador * 100
+ * Calcula el porcentaje de asistencia: MAX(0, (denominador - faltas) / denominador * 100)
+ * Equivale al SI.ERROR(MAX(0; ...) del Excel. Nunca devuelve negativo.
  */
 export function calcularPorcentajeAsistencia(faltas: number, denominador: number): number {
   return denominador > 0
-    ? Math.round(((denominador - faltas) / denominador) * 100)
+    ? Math.max(0, Math.round(((denominador - faltas) / denominador) * 100))
     : 0
 }
 
