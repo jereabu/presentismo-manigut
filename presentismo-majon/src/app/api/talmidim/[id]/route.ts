@@ -61,7 +61,7 @@ export async function GET(
 
     const totalClasesTomadas = stats.presentes + stats.tardes + stats.tardanzas + stats.ausentes + stats.justificados + stats.viajes
     const faltas = calcularFaltas(stats)
-    const totalClasesPasadas = await getTotalClasesPasadas(session.kitaId, talmid.createdAt)
+    const totalClasesPasadas = await getTotalClasesPasadas(session.kitaId)
     const totalClases = totalClasesPasadas > 0 ? totalClasesPasadas : totalClasesTomadas
     const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, totalClases)
 

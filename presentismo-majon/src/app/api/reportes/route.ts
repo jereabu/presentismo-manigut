@@ -59,10 +59,8 @@ export async function GET(request: NextRequest) {
       const viajes     = asistencias.filter((a) => a.estado === 'viaje').length
       const total = presentes + tardes + tardanzas + ausentes + justificados + viajes
 
-      // Denominar solo por clases que ocurrieron desde que el talmid fue dado de alta
-      const totalClasesDesdeAlta = clasesPasadas.filter(c => c.fecha >= talmid.createdAt).length
       const faltas = calcularFaltas({ presentes, tardes, tardanzas, ausentes, justificados, viajes })
-      const denominador = totalClasesDesdeAlta > 0 ? totalClasesDesdeAlta : total
+      const denominador = totalClases > 0 ? totalClases : total
       const porcentajeAsistencia = calcularPorcentajeAsistencia(faltas, denominador)
 
       return {

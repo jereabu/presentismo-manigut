@@ -33,20 +33,16 @@ export function calcularPorcentajeAsistencia(faltas: number, denominador: number
 }
 
 /**
- * Cuenta las clases pasadas (hasta hoy inclusive) y no canceladas de una kitá,
- * opcionalmente limitadas a las que ocurrieron a partir de `desde` (fecha de alta del talmid).
- * Usar `desde` evita que talmidim que ingresaron tarde tengan denominadores inflados.
+ * Cuenta las clases pasadas (hasta hoy inclusive) y no canceladas de una kitá.
+ * Este es el denominador oficial para el cálculo de porcentaje de asistencia.
  */
-export async function getTotalClasesPasadas(kitaId: string, desde?: Date): Promise<number> {
+export async function getTotalClasesPasadas(kitaId: string): Promise<number> {
   const hoy = new Date()
   hoy.setUTCHours(23, 59, 59, 999)
   return prisma.clase.count({
     where: {
       cancelada: false,
-      fecha: {
-        lte: hoy,
-        ...(desde ? { gte: desde } : {}),
-      },
+      fecha: { lte: hoy },
       kitot: { some: { kitaId } },
     },
   })
