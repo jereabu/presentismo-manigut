@@ -105,10 +105,7 @@ export async function GET() {
       .filter(d => d.cantidadFeedbacks > 0)
       .sort((a, b) => b.promedio - a.promedio)
 
-    // Agrupar feedbacks por clase/fecha (excluir feedbacks vacíos: rating=0 y sin comentario real)
-    const feedbacksReales = feedbacks.filter(
-      f => f.claseRating > 0 || (f.claseComentario && f.claseComentario.trim().length > 0)
-    )
+    const feedbacksReales = feedbacks
 
     const claseMap = new Map<string, {
       claseId: string
