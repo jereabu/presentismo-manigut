@@ -69,20 +69,20 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { id } = await request.json()
+    const body = await request.json()
+    // Acepta { id } (uno) o { ids } (bulk)
+    const ids: string[] = body.ids ?? (body.id ? [body.id] : [])
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'IDs requeridos' }, { status: 400 })
     }
 
-    await prisma.docente.update({
-      where: { id },
-      data: { activo: false },
-    })
+    await prisma.claseDocente.deleteMany({ where: { docenteId: { in: ids } } })
+    await prisma.docente.deleteMany({ where: { id: { in: ids } } })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, eliminados: ids.length })
   } catch (error) {
-    console.error('Error deleting docente:', error)
+    console.error('Error deleting docentes:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }

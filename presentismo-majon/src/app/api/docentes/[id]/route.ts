@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getSession } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
@@ -125,6 +126,25 @@ export async function PUT(
     })
   } catch (error) {
     console.error('Error updating docente:', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+
+    const { id } = await params
+    await prisma.claseDocente.deleteMany({ where: { docenteId: id } })
+    await prisma.docente.delete({ where: { id } })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting docente:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
