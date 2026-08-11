@@ -43,10 +43,11 @@ export async function GET(
 
     // Calcular estadisticas de asistencia
     const todasAsistencias = await prisma.asistencia.findMany({
-      where: { talmidId: id, clase: { cancelada: false } },
+      where: { talmidId: id },
+      include: { clase: { select: { cancelada: true } } },
     })
 
-    const stats = todasAsistencias.reduce(
+    const stats = todasAsistencias.filter(a => !a.clase.cancelada).reduce(
       (acc, a) => {
         if (a.estado === 'presente')             acc.presentes++
         else if (a.estado === 'tarde')           acc.tardes++

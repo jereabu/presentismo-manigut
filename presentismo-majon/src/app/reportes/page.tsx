@@ -43,6 +43,7 @@ export default function ReportesPage() {
   const fetchReportes = async () => {
     try {
       const res = await fetch('/api/reportes')
+      if (!res.ok) throw new Error(`Error ${res.status}`)
       const json = await res.json()
       setData(json)
     } catch (error) {

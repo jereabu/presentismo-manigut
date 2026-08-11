@@ -23,9 +23,6 @@ export async function GET(request: NextRequest) {
       orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
       include: {
         asistencias: {
-          where: {
-            clase: { cancelada: false },
-          },
           include: {
             clase: true,
           },
@@ -53,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // Calcular estadisticas por talmid
     const reportes = talmidim.map((talmid) => {
-      const asistencias = talmid.asistencias
+      const asistencias = talmid.asistencias.filter((a) => !a.clase.cancelada)
       const presentes  = asistencias.filter((a) => a.estado === 'presente').length
       const tardes     = asistencias.filter((a) => a.estado === 'tarde').length
       const tardanzas  = asistencias.filter((a) => a.estado === 'presente_tarde').length
