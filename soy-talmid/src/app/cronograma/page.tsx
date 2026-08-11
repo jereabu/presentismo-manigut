@@ -71,6 +71,7 @@ function formatMes(mes: string) {
 export default function CronogramaPage() {
   const [clases, setClases] = useState<ClaseItem[]>([])
   const [feriados, setFeriados] = useState<FeriadoItem[]>([])
+  const [porcentaje, setPorcentaje] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function CronogramaPage() {
       .then(d => {
         setClases(d.clases || [])
         setFeriados(d.feriados || [])
+        setPorcentaje(d.porcentajeAsistencia ?? null)
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -89,23 +91,6 @@ export default function CronogramaPage() {
 
   // Resaltar el mes actual
   const mesActual = new Date().toISOString().slice(0, 7)
-
-  // Calcular porcentaje de asistencia — mismo cálculo que presentismo-majon:
-  // denominador = registros propios del talmid (no cuenta clases sin registro)
-  const hoy = new Date().toISOString().split('T')[0]
-  const clasesPasadas = clases.filter(c => !c.cancelada && c.fecha <= hoy)
-  const clasesConRegistro = clasesPasadas.filter(c => c.asistencia !== null)
-  const totalPropios = clasesConRegistro.length
-  const faltas = clasesConRegistro.reduce((acc, c) => {
-    const e = c.asistencia!.estado
-    if (e === 'tarde') return acc + 0.5
-    if (e === 'presente_tarde') return acc + 0.25
-    if (e === 'presente') return acc
-    return acc + 1 // ausente, ausente_justificado, viaje
-  }, 0)
-  const porcentaje = totalPropios > 0
-    ? Math.max(0, Math.round(((totalPropios - faltas) / totalPropios) * 100))
-    : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
@@ -133,7 +118,7 @@ export default function CronogramaPage() {
                 porcentaje >= 60 ? 'text-amber-700' :
                 'text-red-700'
               }`}>Mi asistencia</p>
-              <p className="text-xs text-gray-500">{totalPasadas} {totalPasadas === 1 ? 'clase' : 'clases'} hasta hoy</p>
+              <p className="text-xs text-gray-500">hasta hoy</p>
             </div>
             <span className={`text-3xl font-bold ${
               porcentaje >= 75 ? 'text-emerald-600' :

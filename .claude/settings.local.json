@@ -11,7 +11,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: agregar app SoyTalmid para feedback de estudiantes\n\nNueva PWA para talmidim con:\n- Auto-registro con código de invitación\n- Login con email/contraseña\n- Sistema de feedback para clases y docentes\n- Historial de feedbacks dados\n- PWA instalable con Service Worker\n- Preparado para notificaciones push\n\nCambios en schema Prisma:\n- InviteCode: códigos de invitación\n- PushSubscription: suscripciones push\n- Feedback: evaluaciones de clase\n- NotificationQueue: cola de notificaciones\n- Campos auth en Talmid \\(passwordHash, lastLogin\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(npm run build:*)",
       "Bash(git commit:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(/Users/jereabu/Documents/GitHub/presentismo-manigut/presentismo-majon/node_modules/.bin/tsc --noEmit)"
     ]
   }
 }
