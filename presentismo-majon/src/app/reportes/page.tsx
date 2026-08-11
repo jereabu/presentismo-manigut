@@ -122,12 +122,15 @@ export default function ReportesPage() {
         const estados = clases.map(c => t.asistencias[c.id] || '')
         const label   = clases.map(c => LABEL[t.asistencias[c.id]] || '')
 
-        const faltaTotal = estados.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
+        // Solo clases con registro propio (mismo denominador que la página)
+        const estadosConRegistro = estados.filter(e => e !== '')
+        const totalPropios = estadosConRegistro.length
+        const faltaTotal = estadosConRegistro.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
         const justCount  = estados.filter(e => e === 'ausente_justificado').length
         const viajeCount = estados.filter(e => e === 'viaje').length
 
-        const pct = totalClases > 0
-          ? ((totalClases - faltaTotal) / totalClases * 100).toFixed(2).replace('.', ',') + '%'
+        const pct = totalPropios > 0
+          ? (Math.max(0, (totalPropios - faltaTotal) / totalPropios) * 100).toFixed(2).replace('.', ',') + '%'
           : '0,00%'
 
         const P  = estados.filter(e => e === 'presente').length
