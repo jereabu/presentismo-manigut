@@ -9,15 +9,16 @@ export interface TalmidSession {
   talmidId: string
   nombre: string
   apellido: string
+  esAdmin: boolean
 }
 
-export async function createSession(talmidId: string, nombre: string, apellido: string): Promise<void> {
+export async function createSession(talmidId: string, nombre: string, apellido: string, esAdmin = false): Promise<void> {
   const token = crypto.randomUUID()
   const expiresAt = new Date(Date.now() + SESSION_DURATION)
 
   // Guardar en cookie
   const cookieStore = await cookies()
-  cookieStore.set(SESSION_COOKIE, JSON.stringify({ token, talmidId, nombre, apellido }), {
+  cookieStore.set(SESSION_COOKIE, JSON.stringify({ token, talmidId, nombre, apellido, esAdmin }), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -43,7 +44,8 @@ export async function getSession(): Promise<TalmidSession | null> {
     return {
       talmidId: session.talmidId,
       nombre: session.nombre,
-      apellido: session.apellido
+      apellido: session.apellido,
+      esAdmin: session.esAdmin ?? false,
     }
   } catch {
     return null
@@ -55,10 +57,10 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(SESSION_COOKIE)
 }
 
-export async function verifyPassword(email: string, password: string): Promise<{ valid: boolean; talmid?: { id: string; nombre: string; apellido: string } }> {
+export async function verifyPassword(email: string, password: string): Promise<{ valid: boolean; talmid?: { id: string; nombre: string; apellido: string; esAdmin: boolean } }> {
   const talmid = await prisma.talmid.findUnique({
     where: { email: email.toLowerCase() },
-    select: { id: true, nombre: true, apellido: true, passwordHash: true, activo: true }
+    select: { id: true, nombre: true, apellido: true, passwordHash: true, activo: true, esAdmin: true }
   })
 
   if (!talmid || !talmid.passwordHash || !talmid.activo) {
@@ -76,7 +78,8 @@ export async function verifyPassword(email: string, password: string): Promise<{
     talmid: {
       id: talmid.id,
       nombre: talmid.nombre,
-      apellido: talmid.apellido
+      apellido: talmid.apellido,
+      esAdmin: talmid.esAdmin,
     }
   }
 }

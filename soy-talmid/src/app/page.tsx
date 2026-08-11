@@ -14,7 +14,7 @@ interface ClasePendiente {
 export default function HomePage() {
   const [clasesPendientes, setClasesPendientes] = useState<ClasePendiente[]>([])
   const [loading, setLoading] = useState(true)
-  const [talmid, setTalmid] = useState<{ nombre: string; apellido: string; fotoUrl?: string | null } | null>(null)
+  const [talmid, setTalmid] = useState<{ nombre: string; apellido: string; fotoUrl?: string | null; esAdmin?: boolean } | null>(null)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const t = useTranslations()
 
@@ -32,7 +32,7 @@ export default function HomePage() {
       if (feedbackRes.ok) {
         const data = await feedbackRes.json()
         setClasesPendientes(data.clasesPendientes || [])
-        setTalmid(data.talmid)
+        setTalmid(prev => ({ ...prev, ...data.talmid }))
       }
       if (perfilRes.ok) {
         const perfilData = await perfilRes.json()
@@ -138,6 +138,21 @@ export default function HomePage() {
       </header>
 
       <main className="p-4 max-w-lg mx-auto">
+        {/* Acceso admin */}
+        {talmid?.esAdmin && (
+          <Link
+            href="/admin/presentismos"
+            className="flex items-center gap-3 bg-emerald-600 text-white rounded-xl p-4 mb-5 shadow-md hover:bg-emerald-700 transition-colors"
+          >
+            <span className="text-2xl">📊</span>
+            <div>
+              <p className="font-semibold">Ver todos los presentismos</p>
+              <p className="text-emerald-100 text-sm">Acceso admin</p>
+            </div>
+            <span className="ml-auto text-emerald-200">→</span>
+          </Link>
+        )}
+
         {/* Banner de notificaciones */}
         {!notificationsEnabled && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">

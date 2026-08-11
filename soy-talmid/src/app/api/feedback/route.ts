@@ -52,7 +52,8 @@ export async function GET() {
       clasesPendientes,
       talmid: {
         nombre: session.nombre,
-        apellido: session.apellido
+        apellido: session.apellido,
+        esAdmin: session.esAdmin,
       }
     })
   } catch (error) {

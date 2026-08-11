@@ -60,6 +60,7 @@ model Talmid {
   // Campos para autenticación de talmidim (SoyTalmid)
   passwordHash    String?
   lastLogin       DateTime?
+  esAdmin         Boolean      @default(false)
 
   // Relación con Kitá
   kitaId String?

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       )
     }
 
-    await createSession(result.talmid.id, result.talmid.nombre, result.talmid.apellido)
+    await createSession(result.talmid.id, result.talmid.nombre, result.talmid.apellido, result.talmid.esAdmin)
 
     return NextResponse.json({
       success: true,
