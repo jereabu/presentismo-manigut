@@ -90,20 +90,21 @@ export default function CronogramaPage() {
   // Resaltar el mes actual
   const mesActual = new Date().toISOString().slice(0, 7)
 
-  // Calcular porcentaje de asistencia (clases pasadas no canceladas)
+  // Calcular porcentaje de asistencia — mismo cálculo que presentismo-majon:
+  // denominador = registros propios del talmid (no cuenta clases sin registro)
   const hoy = new Date().toISOString().split('T')[0]
   const clasesPasadas = clases.filter(c => !c.cancelada && c.fecha <= hoy)
-  const totalPasadas = clasesPasadas.length
-  const pesoTotal = clasesPasadas.reduce((acc, c) => {
-    if (!c.asistencia) return acc + 1 // sin registro = ausente
-    const e = c.asistencia.estado
+  const clasesConRegistro = clasesPasadas.filter(c => c.asistencia !== null)
+  const totalPropios = clasesConRegistro.length
+  const faltas = clasesConRegistro.reduce((acc, c) => {
+    const e = c.asistencia!.estado
     if (e === 'tarde') return acc + 0.5
     if (e === 'presente_tarde') return acc + 0.25
     if (e === 'presente') return acc
     return acc + 1 // ausente, ausente_justificado, viaje
   }, 0)
-  const porcentaje = totalPasadas > 0
-    ? Math.round(((totalPasadas - pesoTotal) / totalPasadas) * 100)
+  const porcentaje = totalPropios > 0
+    ? Math.max(0, Math.round(((totalPropios - faltas) / totalPropios) * 100))
     : null
 
   return (

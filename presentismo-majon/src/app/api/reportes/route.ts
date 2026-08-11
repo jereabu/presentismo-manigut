@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
       orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
       include: {
         asistencias: {
+          where: {
+            clase: { cancelada: false },
+          },
           include: {
             clase: true,
           },

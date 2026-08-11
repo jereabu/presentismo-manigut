@@ -43,7 +43,7 @@ export async function GET(
 
     // Calcular estadisticas de asistencia
     const todasAsistencias = await prisma.asistencia.findMany({
-      where: { talmidId: id },
+      where: { talmidId: id, clase: { cancelada: false } },
     })
 
     const stats = todasAsistencias.reduce(
