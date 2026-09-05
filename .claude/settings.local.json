@@ -18,7 +18,10 @@
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_4ordWt6eCmfc@ep-divine-fog-aq1j5ffw.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db push)",
       "Bash(DATABASE_URL=postgresql://neondb_owner:npg_4ordWt6eCmfc@ep-divine-fog-aq1j5ffw.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require node -e ' *)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_4ordWt6eCmfc@ep-divine-fog-aq1j5ffw.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma generate)",
-      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_4ordWt6eCmfc@ep-divine-fog-aq1j5ffw.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require\" node node_modules/prisma/build/index.js generate)"
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_4ordWt6eCmfc@ep-divine-fog-aq1j5ffw.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require\" node node_modules/prisma/build/index.js generate)",
+      "Bash(git -C /Users/jereabu/Documents/GitHub/presentismo-manigut show 0a252da -- presentismo-majon/src/app/api/reportes/route.ts)",
+      "Bash(grep -n \"^model Clase$\" -A 35 /Users/jereabu/Documents/GitHub/presentismo-manigut/presentismo-majon/prisma/schema.prisma)",
+      "Bash(DATABASE_URL=postgresql://neondb_owner:npg_pzD3SP0Ejgld@ep-divine-fog-aq1j5ffw.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require node -e ' *)"
     ]
   }
 }
