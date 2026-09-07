@@ -72,10 +72,15 @@ export async function GET(request: NextRequest) {
       })
 
       // Agrupar clases por fecha — una columna por día
+      // Usar fecha local Argentina (UTC-3) para la clave de agrupación
+      const toDateAR = (d: Date) => {
+        const ar = new Date(d.getTime() - 3 * 60 * 60 * 1000)
+        return ar.toISOString().split('T')[0]
+      }
       const PRIO = ['presente', 'presente_tarde', 'tarde', 'ausente_justificado', 'viaje', 'ausente']
       const diasMap = new Map<string, typeof clases>()
       for (const c of clases) {
-        const key = c.fecha.toISOString().split('T')[0]
+        const key = toDateAR(c.fecha)
         if (!diasMap.has(key)) diasMap.set(key, [])
         diasMap.get(key)!.push(c)
       }
