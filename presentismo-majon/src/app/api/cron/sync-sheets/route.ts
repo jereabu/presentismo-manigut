@@ -71,44 +71,71 @@ export async function GET(request: NextRequest) {
         include: { asistencias: { select: { claseId: true, estado: true } } },
       })
 
-      const rows: (string | number)[][] = []
+      // Agrupar clases por fecha — una columna por día
+      const PRIO = ['presente', 'presente_tarde', 'tarde', 'ausente_justificado', 'viaje', 'ausente']
+      const diasMap = new Map<string, typeof clases>()
+      for (const c of clases) {
+        const key = c.fecha.toISOString().split('T')[0]
+        if (!diasMap.has(key)) diasMap.set(key, [])
+        diasMap.get(key)!.push(c)
+      }
+      const dias = Array.from(diasMap.entries()) // [fechaStr, clases[]]
 
-      // Encabezado
+      const rows: (string | number)[][] = []
+      const PRESENTES = new Set(['presente', 'tarde', 'presente_tarde'])
+
+      // Encabezado — una columna por día
       rows.push([
         '', 'Apellido', 'Nombre', 'Porcentaje', 'Falta Tot.', 'Falta Just.', 'Falta Viaje',
-        ...clases.map(c => c.titulo === 'Talleres' ? `T ${fmtFecha(c.fecha.toISOString().split('T')[0])}` : fmtFecha(c.fecha.toISOString().split('T')[0])),
+        ...dias.map(([fecha]) => fmtFecha(fecha)),
         'P', 'A', 'AJ', 'T', 'PT', 'V',
       ])
+
+      // Fila 2: total de asistentes por día
+      const totalesPorDia = dias.map(([, clasesDelDia]) =>
+        talmidim.filter(t => {
+          const aMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
+          return clasesDelDia.some(c => PRESENTES.has(aMap[c.id]))
+        }).length
+      )
+      rows.push(['', '', '', '', '', '', '', ...totalesPorDia, '', '', '', '', '', ''])
 
       // Filas de talmidim
       talmidim.forEach((t, idx) => {
         const asistenciaMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
-        const estados = clases.map(c => asistenciaMap[c.id] || '')
-        const label   = clases.map(c => LABEL[asistenciaMap[c.id]] || '')
 
-        // Mismo cálculo que la página: denominador = registros propios
-        const estadosConRegistro = estados.filter(e => e !== '')
+        // Por cada día, tomar el mejor estado registrado entre las clases de ese día
+        const estadosPorDia = dias.map(([, clasesDelDia]) => {
+          const estadosDelDia = clasesDelDia.map(c => asistenciaMap[c.id]).filter(Boolean) as string[]
+          if (estadosDelDia.length === 0) return ''
+          return estadosDelDia.sort((a, b) => PRIO.indexOf(a) - PRIO.indexOf(b))[0]
+        })
+
+        const label = estadosPorDia.map(e => LABEL[e] || '')
+
+        // Cálculo igual que la página: denominador = registros propios
+        const estadosConRegistro = estadosPorDia.filter(e => e !== '')
         const totalPropios = estadosConRegistro.length
         const faltaTotal = estadosConRegistro.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
-        const justCount  = estados.filter(e => e === 'ausente_justificado').length
-        const viajeCount = estados.filter(e => e === 'viaje').length
+        const justCount  = estadosPorDia.filter(e => e === 'ausente_justificado').length
+        const viajeCount = estadosPorDia.filter(e => e === 'viaje').length
 
         const pct = totalPropios > 0
           ? Math.max(0, (totalPropios - faltaTotal) / totalPropios)
           : 0
 
-        const P  = estados.filter(e => e === 'presente').length
-        const A  = estados.filter(e => e === 'ausente').length
+        const P  = estadosPorDia.filter(e => e === 'presente').length
+        const A  = estadosPorDia.filter(e => e === 'ausente').length
         const AJ = justCount
-        const Tc = estados.filter(e => e === 'tarde').length
-        const PT = estados.filter(e => e === 'presente_tarde').length
+        const Tc = estadosPorDia.filter(e => e === 'tarde').length
+        const PT = estadosPorDia.filter(e => e === 'presente_tarde').length
         const V  = viajeCount
 
         rows.push([
           idx + 1,
           t.apellido,
           t.nombre,
-          pct,  // número para que Sheets lo formatee como %
+          pct,
           faltaTotal,
           justCount,
           viajeCount,
@@ -135,7 +162,7 @@ export async function GET(request: NextRequest) {
           requestBody: {
             requests: [{
               repeatCell: {
-                range: { sheetId, startRowIndex: 1, endRowIndex: rows.length, startColumnIndex: 3, endColumnIndex: 4 },
+                range: { sheetId, startRowIndex: 2, endRowIndex: rows.length, startColumnIndex: 3, endColumnIndex: 4 },
                 cell: { userEnteredFormat: { numberFormat: { type: 'PERCENT', pattern: '0.00%' } } },
                 fields: 'userEnteredFormat.numberFormat',
               },
