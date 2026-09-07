@@ -235,14 +235,25 @@ export default function ReportesPage() {
               {t('common.back')}
             </Link>
             <h1 className="text-xl font-bold">{t('reportes.title')}</h1>
-            <button
-              onClick={handleExportCSV}
-              disabled={exportando || !data}
-              className="text-blue-200 hover:text-white text-sm disabled:opacity-50 flex items-center gap-1"
-              title="Exportar CSV"
-            >
-              {exportando ? '...' : '⬇ CSV'}
-            </button>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://docs.google.com/spreadsheets/d/1fJ4aimAx8r1h8iuWVMG1d46z4lvJpHWipZWV1LhBmMI/edit#gid=1199416130"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-200 hover:text-white text-sm"
+                title="Ver en Google Sheets"
+              >
+                📊 Sheets
+              </a>
+              <button
+                onClick={handleExportCSV}
+                disabled={exportando || !data}
+                className="text-blue-200 hover:text-white text-sm disabled:opacity-50 flex items-center gap-1"
+                title="Exportar CSV"
+              >
+                {exportando ? '...' : '⬇ CSV'}
+              </button>
+            </div>
           </div>
         </div>
       </header>
