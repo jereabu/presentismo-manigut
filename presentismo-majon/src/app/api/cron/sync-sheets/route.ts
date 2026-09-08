@@ -150,6 +150,21 @@ export async function GET(request: NextRequest) {
       })
 
       // ── 6. Escribir en el sheet ───────────────────────────────────────────
+      // Deshacer merges antes de escribir (evita que celdas fusionadas de syncs
+      // anteriores hagan aparecer la misma fecha en dos columnas)
+      if (sheetId !== undefined) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [{
+              unmergeCells: {
+                range: { sheetId, startRowIndex: 0, endRowIndex: 1000, startColumnIndex: 0, endColumnIndex: 200 },
+              },
+            }],
+          },
+        }).catch(() => { /* no hay merges, ignorar */ })
+      }
+
       await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${sheetName}!A:ZZ` })
       await sheets.spreadsheets.values.update({
         spreadsheetId,
