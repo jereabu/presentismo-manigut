@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
     // Este sheet es exclusivo de Kita Bet
     const kita = await prisma.kita.findFirstOrThrow({ where: { nombre: 'bet' } })
 
+    let debugJornadas: { arDate: string; label: string; ids: string[] }[] = []
+
     {
       // ── 1. Obtener todas las clases ──────────────────────────────────────
       const clasesRaw = await prisma.clase.findMany({
@@ -78,6 +80,7 @@ export async function GET(request: NextRequest) {
         }
       }
       const jornadas = Array.from(jornadasMap.values()) // ya ordenadas por fecha asc
+      debugJornadas = jornadas.map(j => ({ arDate: j.arDate, label: fmtFecha(j.arDate), ids: j.ids }))
 
       // ── 3. Talmidim con sus asistencias ──────────────────────────────────
       const talmidim = await prisma.talmid.findMany({
@@ -172,7 +175,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, kita: kita.nombre, syncedAt: new Date().toISOString() })
+    return NextResponse.json({ ok: true, kita: kita.nombre, syncedAt: new Date().toISOString(), _debug: debugJornadas })
   } catch (error) {
     console.error('Error sync-sheets:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
