@@ -12,9 +12,9 @@ const LABEL: Record<string, string> = {
 }
 const PRESENTES = new Set(['presente', 'tarde', 'presente_tarde'])
 
-// Fecha UTC → fecha Argentina (UTC-3) como "YYYY-MM-DD"
+// Extrae la fecha UTC como "YYYY-MM-DD" (las fechas se guardan a medianoche UTC)
 function toArDate(d: Date): string {
-  return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().split('T')[0]
+  return d.toISOString().split('T')[0]
 }
 
 function fmtFecha(iso: string) {
