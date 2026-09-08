@@ -10,8 +10,9 @@ const LABEL: Record<string, string> = {
   presente: 'P', tarde: 'T', presente_tarde: 'PT',
   ausente: 'A', ausente_justificado: 'AJ', viaje: 'V',
 }
+const PRESENTES = new Set(['presente', 'tarde', 'presente_tarde'])
 
-// Convierte una fecha UTC a fecha en Argentina (UTC-3) como "YYYY-MM-DD"
+// Fecha UTC → fecha Argentina (UTC-3) como "YYYY-MM-DD"
 function toArDate(d: Date): string {
   return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().split('T')[0]
 }
@@ -21,12 +22,7 @@ function fmtFecha(iso: string) {
   return `${d.replace(/^0/, '')}/${m.replace(/^0/, '')}`
 }
 
-function fmtNum(n: number) {
-  return String(n).replace('.', ',')
-}
-
 export async function GET(request: NextRequest) {
-  // Proteger con CRON_SECRET
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -36,7 +32,6 @@ export async function GET(request: NextRequest) {
     const spreadsheetId = process.env.GOOGLE_SHEETS_ID!
     const sheetGid = process.env.GOOGLE_SHEETS_GID!
 
-    // Autenticar con Google
     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT!)
     const auth = new google.auth.JWT({
       email: credentials.client_email,
@@ -45,21 +40,20 @@ export async function GET(request: NextRequest) {
     })
     const sheets = google.sheets({ version: 'v4', auth })
 
-    // Obtener el nombre de la hoja a partir del gid
     const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId })
     const sheet = spreadsheet.data.sheets?.find(
       s => String(s.properties?.sheetId) === sheetGid
     )
     const sheetName = sheet?.properties?.title ?? 'Sheet1'
+    const sheetId   = sheet?.properties?.sheetId
 
-    // Obtener datos de la DB — misma lógica que /api/reportes/export
     const hoy = new Date()
     hoy.setUTCHours(23, 59, 59, 999)
 
-    // Sync para todas las kitot activas
     const kitot = await prisma.kita.findMany({ where: { activa: true } })
 
     for (const kita of kitot) {
+      // ── 1. Obtener todas las clases ──────────────────────────────────────
       const clasesRaw = await prisma.clase.findMany({
         where: {
           cancelada: false,
@@ -67,53 +61,72 @@ export async function GET(request: NextRequest) {
           kitot: { some: { kitaId: kita.id } },
         },
         orderBy: { fecha: 'asc' },
-        select: { id: true, fecha: true, diaSemana: true, titulo: true },
-      })
-      // Deduplicar: una jornada = una columna, usando fecha Argentina (UTC-3)
-      const seenFechas = new Set<string>()
-      const clases = clasesRaw.filter(c => {
-        const fechaKey = toArDate(c.fecha)
-        if (seenFechas.has(fechaKey)) return false
-        seenFechas.add(fechaKey)
-        return true
+        select: { id: true, fecha: true },
       })
 
+      // ── 2. Agrupar por fecha Argentina → una jornada = un grupo de IDs ──
+      // Si hay múltiples Clase records en la misma fecha AR, sus IDs se
+      // agrupan para que la asistencia de cualquiera de ellos cuente.
+      const jornadasMap = new Map<string, { arDate: string; ids: string[] }>()
+      for (const c of clasesRaw) {
+        const arDate = toArDate(c.fecha)
+        if (!jornadasMap.has(arDate)) {
+          jornadasMap.set(arDate, { arDate, ids: [c.id] })
+        } else {
+          jornadasMap.get(arDate)!.ids.push(c.id)
+        }
+      }
+      const jornadas = Array.from(jornadasMap.values()) // ya ordenadas por fecha asc
+
+      // ── 3. Talmidim con sus asistencias ──────────────────────────────────
       const talmidim = await prisma.talmid.findMany({
         where: { activo: true, kitaId: kita.id },
         orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
         include: { asistencias: { select: { claseId: true, estado: true } } },
       })
 
-      const rows: (string | number)[][] = []
-      const PRESENTES = new Set(['presente', 'tarde', 'presente_tarde'])
+      // ── 4. Helpers por talmid ─────────────────────────────────────────────
+      // Dado un talmid y una jornada, devuelve el estado (primer ID que tenga registro)
+      const getEstado = (
+        aMap: Record<string, string>,
+        ids: string[]
+      ): string => {
+        for (const id of ids) {
+          if (aMap[id]) return aMap[id]
+        }
+        return ''
+      }
 
-      // Fila 1: encabezado — una columna por clase
+      // ── 5. Construir filas ────────────────────────────────────────────────
+      const rows: (string | number)[][] = []
+
+      // Fila 1: encabezado
       rows.push([
         '', 'Apellido', 'Nombre', 'Porcentaje', 'Falta Tot.', 'Falta Just.', 'Falta Viaje',
-        ...clases.map(c => fmtFecha(toArDate(c.fecha))),
+        ...jornadas.map(j => fmtFecha(j.arDate)),
         'P', 'A', 'AJ', 'T', 'PT', 'V',
       ])
 
-      // Fila 2: total de asistentes por clase (igual que el Excel original)
-      const totalPorClase = clases.map(c =>
+      // Fila 2: total de presentes por jornada
+      const totalPorJornada = jornadas.map(j =>
         talmidim.filter(t => {
           const aMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
-          return PRESENTES.has(aMap[c.id])
+          return PRESENTES.has(getEstado(aMap, j.ids))
         }).length
       )
-      rows.push(['', '', '', '', '', '', '', ...totalPorClase, '', '', '', '', '', ''])
+      rows.push(['', '', '', '', '', '', '', ...totalPorJornada, '', '', '', '', '', ''])
 
       // Filas de talmidim
       talmidim.forEach((t, idx) => {
-        const asistenciaMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
-        const estados = clases.map(c => asistenciaMap[c.id] || '')
-        const label   = clases.map(c => LABEL[asistenciaMap[c.id]] || '')
+        const aMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
+        const estados = jornadas.map(j => getEstado(aMap, j.ids))
+        const label   = estados.map(e => LABEL[e] || '')
 
-        const estadosConRegistro = estados.filter(e => e !== '')
-        const totalPropios = estadosConRegistro.length
-        const faltaTotal = estadosConRegistro.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
-        const justCount  = estados.filter(e => e === 'ausente_justificado').length
-        const viajeCount = estados.filter(e => e === 'viaje').length
+        const conRegistro  = estados.filter(e => e !== '')
+        const totalPropios = conRegistro.length
+        const faltaTotal   = conRegistro.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
+        const justCount    = estados.filter(e => e === 'ausente_justificado').length
+        const viajeCount   = estados.filter(e => e === 'viaje').length
 
         const pct = totalPropios > 0
           ? Math.max(0, (totalPropios - faltaTotal) / totalPropios)
@@ -121,36 +134,27 @@ export async function GET(request: NextRequest) {
 
         const P  = estados.filter(e => e === 'presente').length
         const A  = estados.filter(e => e === 'ausente').length
-        const AJ = justCount
         const Tc = estados.filter(e => e === 'tarde').length
         const PT = estados.filter(e => e === 'presente_tarde').length
-        const V  = viajeCount
 
         rows.push([
-          idx + 1,
-          t.apellido,
-          t.nombre,
-          pct,
-          faltaTotal,
-          justCount,
-          viajeCount,
+          idx + 1, t.apellido, t.nombre,
+          pct, faltaTotal, justCount, viajeCount,
           ...label,
-          P, A, AJ, Tc, PT, V,
+          P, A, justCount, Tc, PT, viajeCount,
         ])
       })
 
-      // Escribir en la hoja (usa el nombre de la hoja encontrado por gid)
-      const range = `${sheetName}!A1`
+      // ── 6. Escribir en el sheet ───────────────────────────────────────────
       await sheets.spreadsheets.values.clear({ spreadsheetId, range: `${sheetName}!A:ZZ` })
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range,
+        range: `${sheetName}!A1`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: rows },
       })
 
-      // Formatear columna de porcentaje (col D = índice 3) como %
-      const sheetId = sheet?.properties?.sheetId
+      // Formatear columna D (porcentaje) como %
       if (sheetId !== undefined) {
         await sheets.spreadsheets.batchUpdate({
           spreadsheetId,
