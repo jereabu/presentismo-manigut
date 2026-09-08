@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     const kitot = await prisma.kita.findMany({ where: { activa: true } })
 
     for (const kita of kitot) {
-      const clases = await prisma.clase.findMany({
+      const clasesRaw = await prisma.clase.findMany({
         where: {
           cancelada: false,
           fecha: { lte: hoy },
@@ -63,6 +63,17 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { fecha: 'asc' },
         select: { id: true, fecha: true, diaSemana: true, titulo: true },
+      })
+      // Deduplicar por ID y luego por fecha (una jornada = una columna)
+      const seenIds = new Set<string>()
+      const seenFechas = new Set<string>()
+      const clases = clasesRaw.filter(c => {
+        if (seenIds.has(c.id)) return false
+        seenIds.add(c.id)
+        const fechaKey = c.fecha.toISOString().split('T')[0]
+        if (seenFechas.has(fechaKey)) return false
+        seenFechas.add(fechaKey)
+        return true
       })
 
       const talmidim = await prisma.talmid.findMany({
