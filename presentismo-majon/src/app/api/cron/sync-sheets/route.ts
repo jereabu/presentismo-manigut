@@ -46,6 +46,8 @@ export async function GET(request: NextRequest) {
     )
     const sheetName = sheet?.properties?.title ?? 'Sheet1'
     const sheetId   = sheet?.properties?.sheetId
+    debugSheetName = sheetName
+    debugSheetId   = sheetId
 
     const hoy = new Date()
     hoy.setUTCHours(23, 59, 59, 999)
@@ -54,6 +56,8 @@ export async function GET(request: NextRequest) {
     const kita = await prisma.kita.findFirstOrThrow({ where: { nombre: 'bet' } })
 
     let debugJornadas: { arDate: string; label: string; ids: string[] }[] = []
+    let debugSheetName = ''
+    let debugSheetId: number | null | undefined = null
 
     {
       // ── 1. Obtener todas las clases ──────────────────────────────────────
@@ -175,7 +179,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, kita: kita.nombre, syncedAt: new Date().toISOString(), _debug: debugJornadas })
+    return NextResponse.json({ ok: true, kita: kita.nombre, sheetName: debugSheetName, sheetGidFound: debugSheetId, sheetGidEnv: sheetGid, syncedAt: new Date().toISOString(), _debug: debugJornadas })
   } catch (error) {
     console.error('Error sync-sheets:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })

@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
         nombre: talmid.nombre,
         apellido: talmid.apellido,
         presentes,
+        tardes,
         tardanzas,
         ausentes,
         justificados,

@@ -9,6 +9,7 @@ interface Reporte {
   nombre: string
   apellido: string
   presentes: number
+  tardes: number
   tardanzas: number
   ausentes: number
   justificados: number
@@ -303,9 +304,11 @@ export default function ReportesPage() {
                       <div className="text-green-600">
                         <span className="font-semibold">{reporte.presentes}</span> {t('reportes.stats.present')}
                       </div>
-                      <div className="text-yellow-600">
-                        <span className="font-semibold">{reporte.tardanzas}</span> {t('reportes.stats.late')}
-                      </div>
+                      {(reporte.tardes > 0 || reporte.tardanzas > 0) && (
+                        <div className="text-yellow-600">
+                          <span className="font-semibold">{reporte.tardes + reporte.tardanzas}</span> {t('reportes.stats.late')}
+                        </div>
+                      )}
                       <div className="text-red-600">
                         <span className="font-semibold">{reporte.ausentes + reporte.justificados}</span> {t('reportes.stats.absent')}
                         {reporte.justificados > 0 && (
