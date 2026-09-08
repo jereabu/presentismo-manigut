@@ -11,6 +11,11 @@ const LABEL: Record<string, string> = {
   ausente: 'A', ausente_justificado: 'AJ', viaje: 'V',
 }
 
+// Convierte una fecha UTC a fecha en Argentina (UTC-3) como "YYYY-MM-DD"
+function toArDate(d: Date): string {
+  return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().split('T')[0]
+}
+
 function fmtFecha(iso: string) {
   const [, m, d] = iso.split('-')
   return `${d.replace(/^0/, '')}/${m.replace(/^0/, '')}`
@@ -64,13 +69,10 @@ export async function GET(request: NextRequest) {
         orderBy: { fecha: 'asc' },
         select: { id: true, fecha: true, diaSemana: true, titulo: true },
       })
-      // Deduplicar por ID y luego por fecha (una jornada = una columna)
-      const seenIds = new Set<string>()
+      // Deduplicar: una jornada = una columna, usando fecha Argentina (UTC-3)
       const seenFechas = new Set<string>()
       const clases = clasesRaw.filter(c => {
-        if (seenIds.has(c.id)) return false
-        seenIds.add(c.id)
-        const fechaKey = c.fecha.toISOString().split('T')[0]
+        const fechaKey = toArDate(c.fecha)
         if (seenFechas.has(fechaKey)) return false
         seenFechas.add(fechaKey)
         return true
@@ -88,7 +90,7 @@ export async function GET(request: NextRequest) {
       // Fila 1: encabezado — una columna por clase
       rows.push([
         '', 'Apellido', 'Nombre', 'Porcentaje', 'Falta Tot.', 'Falta Just.', 'Falta Viaje',
-        ...clases.map(c => fmtFecha(c.fecha.toISOString().split('T')[0])),
+        ...clases.map(c => fmtFecha(toArDate(c.fecha))),
         'P', 'A', 'AJ', 'T', 'PT', 'V',
       ])
 
