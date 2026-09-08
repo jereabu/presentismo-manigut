@@ -71,69 +71,46 @@ export async function GET(request: NextRequest) {
         include: { asistencias: { select: { claseId: true, estado: true } } },
       })
 
-      // Agrupar clases por fecha — una columna por día
-      // Usar fecha local Argentina (UTC-3) para la clave de agrupación
-      const toDateAR = (d: Date) => {
-        const ar = new Date(d.getTime() - 3 * 60 * 60 * 1000)
-        return ar.toISOString().split('T')[0]
-      }
-      const PRIO = ['presente', 'presente_tarde', 'tarde', 'ausente_justificado', 'viaje', 'ausente']
-      const diasMap = new Map<string, typeof clases>()
-      for (const c of clases) {
-        const key = toDateAR(c.fecha)
-        if (!diasMap.has(key)) diasMap.set(key, [])
-        diasMap.get(key)!.push(c)
-      }
-      const dias = Array.from(diasMap.entries()) // [fechaStr, clases[]]
-
       const rows: (string | number)[][] = []
       const PRESENTES = new Set(['presente', 'tarde', 'presente_tarde'])
 
-      // Encabezado — una columna por día
+      // Fila 1: encabezado — una columna por clase
       rows.push([
         '', 'Apellido', 'Nombre', 'Porcentaje', 'Falta Tot.', 'Falta Just.', 'Falta Viaje',
-        ...dias.map(([fecha]) => fmtFecha(fecha)),
+        ...clases.map(c => fmtFecha(c.fecha.toISOString().split('T')[0])),
         'P', 'A', 'AJ', 'T', 'PT', 'V',
       ])
 
-      // Fila 2: total de asistentes por día
-      const totalesPorDia = dias.map(([, clasesDelDia]) =>
+      // Fila 2: total de asistentes por clase (igual que el Excel original)
+      const totalPorClase = clases.map(c =>
         talmidim.filter(t => {
           const aMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
-          return clasesDelDia.some(c => PRESENTES.has(aMap[c.id]))
+          return PRESENTES.has(aMap[c.id])
         }).length
       )
-      rows.push(['', '', '', '', '', '', '', ...totalesPorDia, '', '', '', '', '', ''])
+      rows.push(['', '', '', '', '', '', '', ...totalPorClase, '', '', '', '', '', ''])
 
       // Filas de talmidim
       talmidim.forEach((t, idx) => {
         const asistenciaMap = Object.fromEntries(t.asistencias.map(a => [a.claseId, a.estado]))
+        const estados = clases.map(c => asistenciaMap[c.id] || '')
+        const label   = clases.map(c => LABEL[asistenciaMap[c.id]] || '')
 
-        // Por cada día, tomar el mejor estado registrado entre las clases de ese día
-        const estadosPorDia = dias.map(([, clasesDelDia]) => {
-          const estadosDelDia = clasesDelDia.map(c => asistenciaMap[c.id]).filter(Boolean) as string[]
-          if (estadosDelDia.length === 0) return ''
-          return estadosDelDia.sort((a, b) => PRIO.indexOf(a) - PRIO.indexOf(b))[0]
-        })
-
-        const label = estadosPorDia.map(e => LABEL[e] || '')
-
-        // Cálculo igual que la página: denominador = registros propios
-        const estadosConRegistro = estadosPorDia.filter(e => e !== '')
+        const estadosConRegistro = estados.filter(e => e !== '')
         const totalPropios = estadosConRegistro.length
         const faltaTotal = estadosConRegistro.reduce((acc, e) => acc + (FALTA[e] ?? 0), 0)
-        const justCount  = estadosPorDia.filter(e => e === 'ausente_justificado').length
-        const viajeCount = estadosPorDia.filter(e => e === 'viaje').length
+        const justCount  = estados.filter(e => e === 'ausente_justificado').length
+        const viajeCount = estados.filter(e => e === 'viaje').length
 
         const pct = totalPropios > 0
           ? Math.max(0, (totalPropios - faltaTotal) / totalPropios)
           : 0
 
-        const P  = estadosPorDia.filter(e => e === 'presente').length
-        const A  = estadosPorDia.filter(e => e === 'ausente').length
+        const P  = estados.filter(e => e === 'presente').length
+        const A  = estados.filter(e => e === 'ausente').length
         const AJ = justCount
-        const Tc = estadosPorDia.filter(e => e === 'tarde').length
-        const PT = estadosPorDia.filter(e => e === 'presente_tarde').length
+        const Tc = estados.filter(e => e === 'tarde').length
+        const PT = estados.filter(e => e === 'presente_tarde').length
         const V  = viajeCount
 
         rows.push([
