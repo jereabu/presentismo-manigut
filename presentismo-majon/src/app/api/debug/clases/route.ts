@@ -5,20 +5,24 @@ export async function GET(req: NextRequest) {
   if (req.nextUrl.searchParams.get('secret') !== process.env.CRON_SECRET)
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const rows = await prisma.$queryRaw<{ id: string; fecha: Date; titulo: string | null; kitas: string[] }[]>`
-    SELECT c.id::text, c.fecha, c.titulo, array_agg(DISTINCT k.nombre) as kitas
-    FROM "Clase" c
-    JOIN "ClaseKita" ck ON ck."claseId" = c.id
-    JOIN "Kita" k ON k.id = ck."kitaId"
-    WHERE c.cancelada = false AND c.fecha <= NOW()
-    ORDER BY c.fecha
-  `
+  const clases = await prisma.clase.findMany({
+    where: { cancelada: false, fecha: { lte: new Date() } },
+    orderBy: { fecha: 'asc' },
+    select: {
+      id: true,
+      fecha: true,
+      titulo: true,
+      diaSemana: true,
+      kitot: { select: { kita: { select: { nombre: true } } } },
+    },
+  })
 
-  return NextResponse.json(rows.map(r => ({
-    id: r.id,
-    fechaUTC: (r.fecha as unknown as Date).toISOString?.() ?? r.fecha,
-    fechaAR: new Date((r.fecha as unknown as Date).getTime() - 3*3600*1000).toISOString().split('T')[0],
-    titulo: r.titulo,
-    kitas: r.kitas,
+  return NextResponse.json(clases.map(c => ({
+    id: c.id,
+    fechaUTC: c.fecha.toISOString(),
+    fechaDate: c.fecha.toISOString().split('T')[0],
+    titulo: c.titulo,
+    dia: c.diaSemana,
+    kitas: c.kitot.map(k => k.kita.nombre),
   })))
 }
