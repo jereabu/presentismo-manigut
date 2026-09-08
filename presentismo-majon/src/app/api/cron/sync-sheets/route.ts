@@ -50,9 +50,10 @@ export async function GET(request: NextRequest) {
     const hoy = new Date()
     hoy.setUTCHours(23, 59, 59, 999)
 
-    const kitot = await prisma.kita.findMany({ where: { activa: true } })
+    // Este sheet es exclusivo de Kita Bet
+    const kita = await prisma.kita.findFirstOrThrow({ where: { nombre: 'bet' } })
 
-    for (const kita of kitot) {
+    {
       // ── 1. Obtener todas las clases ──────────────────────────────────────
       const clasesRaw = await prisma.clase.findMany({
         where: {
@@ -171,7 +172,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, syncedAt: new Date().toISOString() })
+    return NextResponse.json({ ok: true, kita: kita.nombre, syncedAt: new Date().toISOString() })
   } catch (error) {
     console.error('Error sync-sheets:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
