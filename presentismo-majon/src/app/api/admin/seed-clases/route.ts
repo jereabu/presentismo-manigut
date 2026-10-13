@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
         diaSemana: c.diaSemana,
         titulo: c.titulo,
         cancelada: false,
+        horaInicio: c.diaSemana === 'viernes' ? '17:30' : '18:30',
+        horaFin:   c.diaSemana === 'viernes' ? '19:00' : '21:00',
         kitot: {
           create: c.kitas.map(nombre => ({ kitaId: kitasMap[nombre] })),
         },
