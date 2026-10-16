@@ -109,6 +109,10 @@ export default function TalmidFichaPage({
   const [nuevaAusencia, setNuevaAusencia] = useState({ fechaInicio: '', fechaFin: '', justificacion: '' })
   const [savingAusencia, setSavingAusencia] = useState(false)
   const [ausenciaError, setAusenciaError] = useState('')
+  const [showResetPassword, setShowResetPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [resetPasswordMsg, setResetPasswordMsg] = useState('')
 
   useEffect(() => {
     fetchTalmid()
@@ -415,6 +419,31 @@ export default function TalmidFichaPage({
     )
   }
 
+  const handleResetPassword = async () => {
+    if (!newPassword) return
+    setResettingPassword(true)
+    setResetPasswordMsg('')
+    try {
+      const res = await fetch(`/api/talmidim/${id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      })
+      if (res.ok) {
+        setResetPasswordMsg('Contraseña actualizada')
+        setNewPassword('')
+        setShowResetPassword(false)
+      } else {
+        const json = await res.json()
+        setResetPasswordMsg(json.error || 'Error al actualizar')
+      }
+    } catch {
+      setResetPasswordMsg('Error al actualizar')
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
   if (!data?.talmid) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -713,6 +742,49 @@ export default function TalmidFichaPage({
                     >
                       Agregar datos
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Reset password */}
+              <div className="bg-white rounded-xl shadow-sm p-4 mt-4">
+                {!showResetPassword ? (
+                  <button
+                    onClick={() => { setShowResetPassword(true); setResetPasswordMsg('') }}
+                    className="w-full text-sm text-gray-500 hover:text-indigo-600 transition"
+                  >
+                    Reiniciar contraseña de SoyTalmid
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-gray-700">Nueva contraseña para SoyTalmid</p>
+                    <input
+                      type="text"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Nueva contraseña"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleResetPassword}
+                        disabled={resettingPassword || !newPassword}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 rounded-lg transition disabled:opacity-50"
+                      >
+                        {resettingPassword ? 'Guardando...' : 'Guardar'}
+                      </button>
+                      <button
+                        onClick={() => { setShowResetPassword(false); setNewPassword(''); setResetPasswordMsg('') }}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm py-2 rounded-lg transition"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                    {resetPasswordMsg && (
+                      <p className={`text-sm text-center ${resetPasswordMsg === 'Contraseña actualizada' ? 'text-green-600' : 'text-red-600'}`}>
+                        {resetPasswordMsg}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
