@@ -693,6 +693,7 @@ export default function TalmidFichaPage({
                 </button>
               </div>
             ) : (
+              <>
               <div className="bg-white rounded-xl shadow-sm divide-y">
                 {talmid.fechaNacimiento && (
                   <div className="p-4 flex items-center gap-3">
@@ -788,6 +789,7 @@ export default function TalmidFichaPage({
                   </div>
                 )}
               </div>
+              </>
             )}
           </div>
         )}
